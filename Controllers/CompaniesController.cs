@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 
 namespace JobPortalAPI.Controllers
+
 {
     [Route("api/[controller]")]
     [ApiController]
