@@ -1,53 +1,42 @@
 using Microsoft.AspNetCore.Mvc;
-using JobPortalAPI.Services;
-using JobPortalAPI.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Authorization;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Microsoft.IdentityModel.Tokens;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using JobPortalAPI.Models;
 
 namespace JobPortalAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/users")]
     [ApiController]
     public class UsersController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
-        private readonly SignInManager<User> _signInManager;
-        private readonly IConfiguration _configuration;
-        private readonly EmailService _emailService;
         private readonly JobPortalContext _context;
 
-        public UsersController(
-            UserManager<User> userManager,
-            SignInManager<User> signInManager,
-            IConfiguration configuration,
-            EmailService emailService,
-            JobPortalContext context)
+        public UsersController(UserManager<User> userManager, JobPortalContext context)
         {
             _userManager = userManager;
-            _signInManager = signInManager;
-            _configuration = configuration;
-            _emailService = emailService;
             _context = context;
         }
 
         // ✅ GET ALL USERS (Admin Only)
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
+            
             var users = await _context.Users.ToListAsync();
+            foreach (var user in users)
+            {
+                Console.WriteLine($"User: {user.Email}, Role: {user.Role}");  //  Debugging log
+            }
+            
             return Ok(users);
         }
 
-        // ✅ GET A SINGLE USER
+        //GET A SINGLE USER
         [HttpGet("{id}")]
         [Authorize]
         public async Task<ActionResult<User>> GetUser(string id)
@@ -59,84 +48,27 @@ namespace JobPortalAPI.Controllers
             return Ok(user);
         }
 
-        // ✅ REGISTER USER
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] AuthModel model)
+        // ✅ UPDATE USER ROLE (Admin Only)
+        [HttpPut("{id}/role")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateUserRole(string id, [FromBody] UpdateRoleModel model)
         {
-            var user = new User
-            {
-                UserName = model.Email,
-                Email = model.Email,
-                FullName = model.FullName,
-                Role = model.Role
-            };
-
-            var result = await _userManager.CreateAsync(user, model.Password);
-
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
-
-            return Ok(new { message = "User registered successfully!" });
-        }
-
-        // ✅ LOGIN & GET JWT TOKEN
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginModel model)
-        {
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            var user = await _userManager.FindByIdAsync(id);
             if (user == null)
-                return Unauthorized("Invalid credentials.");
+                return NotFound("User not found.");
 
-            var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
-            if (!result.Succeeded)
-                return Unauthorized("Invalid credentials.");
+            // ✅ Validate Role (Only "Admin", "Recruiter", "JobSeeker" allowed)
+            if (model.Role != "Admin" && model.Role != "Recruiter" && model.Role != "JobSeeker")
+                return BadRequest("Invalid role. Allowed: Admin, Recruiter, JobSeeker.");
 
-            var token = GenerateJwtToken(user);
-            return Ok(new { Token = token });
+            user.Role = model.Role;
+            await _userManager.UpdateAsync(user);
+            return Ok(new { message = "User role updated successfully!", user.Role });
         }
-
-        // ✅ GENERATE JWT TOKEN
-        private string GenerateJwtToken(User user)
-{
-    var claims = new List<Claim>
-    {
-        new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-        new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""), // ✅ FIXED: Prevent null reference
-        new Claim(ClaimTypes.Role, user.Role ?? "JobSeeker") // ✅ FIXED: Default Role
-    };
-
-    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? ""));
-    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-    var expires = DateTime.UtcNow.AddHours(Convert.ToDouble(_configuration["Jwt:ExpireHours"] ?? "1"));
-
-    var token = new JwtSecurityToken(
-        _configuration["Jwt:Issuer"],
-        _configuration["Jwt:Issuer"],
-        claims,
-        expires: expires,
-        signingCredentials: creds
-    );
-
-    return new JwtSecurityTokenHandler().WriteToken(token);
-}
-
     }
 
-    // ✅ LOGIN / REGISTER MODEL
-    
-public class AuthModel
-{
-    public required string Email { get; set; }  // ✅ FIXED: Added 'required' to enforce non-null values
-    public required string Password { get; set; }  // ✅ FIXED
-    public required string FullName { get; set; }  // ✅ FIXED
-    public required string Role { get; set; }  // ✅ FIXED
-}
-
-public class LoginModel
-{
-    public required string Email { get; set; }
-    public required string Password { get; set; }
-}
-
-
+    public class UpdateRoleModel
+    {
+        public required string Role { get; set; }
+    }
 }

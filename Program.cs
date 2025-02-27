@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+
+
 using Microsoft.OpenApi.Models;
 using System.Text;
 
@@ -36,17 +39,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// ✅ Register Authorization
+// Register Authorization
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
     options.AddPolicy("RequireRecruiterRole", policy => policy.RequireRole("Recruiter"));
+    options.AddPolicy("RequireUserRole", policy => policy.RequireRole("JobSeeker"));
 });
 
-// ✅ Register Mail Service
+
+// Register Mail Service
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<EmailService>();
 
-// ✅ Register Controllers
+// Register Controllers
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -78,6 +84,22 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+// ✅ Ensure Roles Exist Before Running the App
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+    var roles = new[] { "Admin", "Recruiter", "JobSeeker" };
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
+            Console.WriteLine($" Created role: {role}"); //  Debugging Log
+        }
+    }
+}
 
 // ✅ Enable Middleware
 app.UseSwagger();

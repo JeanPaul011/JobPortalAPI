@@ -37,27 +37,46 @@ namespace JobPortalAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Recruiter,Admin")]
-        public async Task<ActionResult<Company>> CreateCompany(Company company)
+        public async Task<IActionResult> CreateCompany([FromBody] Company company)
         {
+            if (company == null)
+            {
+                return BadRequest("Company data is required.");
+            }
+
             _context.Companies.Add(company);
             await _context.SaveChangesAsync();
+
             return CreatedAtAction(nameof(GetCompany), new { id = company.Id }, company);
         }
 
-        [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeleteCompany(int id)
-        {
-            var company = await _context.Companies.FindAsync(id);
-            if (company == null)
-            {
-                return NotFound();
-            }
 
-            _context.Companies.Remove(company);
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
+        [HttpDelete("{id}")]
+[Authorize(Roles = "Admin")]
+public async Task<IActionResult> DeleteCompany(int id)
+{
+    Console.WriteLine($"🔹 DELETE request received for Company ID: {id}");
+
+    var company = await _context.Companies
+        .AsTracking()
+        .FirstOrDefaultAsync(c => c.Id == id);
+
+    if (company == null)
+    {
+        Console.WriteLine($"🔴 ERROR: Company with ID {id} not found.");
+        return NotFound();
+    }
+
+    Console.WriteLine($"✅ Company with ID {id} found. Proceeding with deletion.");
+
+    _context.Companies.Remove(company);
+    await _context.SaveChangesAsync();
+
+    Console.WriteLine($"✅ Company with ID {id} deleted successfully.");
+    return NoContent();
+}
+
+
+
     }
 }

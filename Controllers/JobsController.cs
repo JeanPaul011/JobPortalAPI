@@ -35,27 +35,28 @@ namespace JobPortalAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Job>> CreateJob(Job job)
+        public async Task<ActionResult<Job>> CreateJob([FromBody] Job job)
         {
+            // ✅ Debugging: Print the provided Company ID
+            Console.WriteLine($"🔍 Checking Company ID: {job.CompanyId}");
+
+            // ✅ Check if the Company exists
+            var companyExists = await _context.Companies.AnyAsync(c => c.Id == job.CompanyId);
+            if (!companyExists)
+            {
+                Console.WriteLine($"❌ Company ID {job.CompanyId} does not exist.");
+                return BadRequest(new { message = "Company does not exist!" });
+            }
+
             _context.Jobs.Add(job);
             await _context.SaveChangesAsync();
+
+            Console.WriteLine($"✅ Job '{job.Title}' created successfully!");
             return CreatedAtAction(nameof(GetJob), new { id = job.Id }, job);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateJob(int id, Job job)
-        {
-            if (id != job.Id)
-            {
-                return BadRequest();
-            }
 
-            _context.Entry(job).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
 
-        
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteJob(int id)

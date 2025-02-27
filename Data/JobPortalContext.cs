@@ -12,5 +12,31 @@ namespace JobPortalAPI.Models
         public DbSet<JobApplication> JobApplications { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Review> Reviews { get; set; }
+        
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // Enable Cascade Delete for Jobs when a Company is deleted
+        modelBuilder.Entity<Job>()
+            .HasOne(j => j.Company)
+            .WithMany(c => c.Jobs)
+            .HasForeignKey(j => j.CompanyId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Enable Cascade Delete for Reviews when a Company is deleted
+        modelBuilder.Entity<Review>()
+            .HasOne(r => r.Company)
+            .WithMany(c => c.Reviews)
+            .HasForeignKey(r => r.CompanyId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // If users are linked as recruiters to companies, configure Many-to-Many relationship properly
+        modelBuilder.Entity<Company>()
+            .HasMany(c => c.Recruiters)
+            .WithMany(u => u.Companies)
+            .UsingEntity(j => j.ToTable("CompanyRecruiters"));  // Creates a junction table
+    }
     }
 }
