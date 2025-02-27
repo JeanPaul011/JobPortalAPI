@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using JobPortalAPI.Services;  // ✅ Make sure this is added
 using System.Threading.Tasks;
 using JobPortalAPI.Models;
 using System;
@@ -32,13 +33,12 @@ namespace JobPortalAPI.Controllers
 
         // ✅ REGISTER USER
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] AuthModel model)
+        public async Task<IActionResult> Register([FromBody] AuthModel model, [FromServices] EmailService emailService)
         {
             var existingUser = await _userManager.FindByEmailAsync(model.Email);
             if (existingUser != null)
                 return BadRequest(new { message = "User already exists!" });
 
-            // ✅ Validate Role (Only "Admin", "Recruiter", "JobSeeker" allowed)
             if (model.Role != "Admin" && model.Role != "Recruiter" && model.Role != "JobSeeker")
                 return BadRequest(new { message = "Invalid role. Allowed: Admin, Recruiter, JobSeeker." });
 
@@ -55,8 +55,15 @@ namespace JobPortalAPI.Controllers
                 return BadRequest(result.Errors);
 
             await _userManager.AddToRoleAsync(user, model.Role);
-            Console.WriteLine($"User {user.Email} registered with role {model.Role}"); // 🔥 Debugging log
-            return Ok(new { message = "User registered successfully!", user.Role });
+
+            // ✅ Send Welcome Email
+            string subject = "Welcome to Job Portal!";
+            string body = $"<h3>Hi {user.FullName},</h3><p>Your account has been successfully created.</p>";
+            await emailService.SendEmailAsync(user.Email, subject, body);
+
+            Console.WriteLine($"📧 Sent welcome email to {user.Email}");
+
+            return Ok(new { message = "User registered successfully! An email has been sent.", user.Role });
         }
 
         // ✅ LOGIN & GET JWT TOKEN
@@ -96,6 +103,7 @@ namespace JobPortalAPI.Controllers
                 expires: expires,
                 signingCredentials: creds
             );
+            Console.WriteLine($"🔐 JWT Token Created for {user.Email} | Role: {user.Role}");
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }

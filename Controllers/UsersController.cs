@@ -8,7 +8,7 @@ using JobPortalAPI.Models;
 
 namespace JobPortalAPI.Controllers
 {
-    [Route("api/users")]
+    [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
     {
@@ -23,18 +23,84 @@ namespace JobPortalAPI.Controllers
 
         // ✅ GET ALL USERS (Admin Only)
         [HttpGet]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
-            
-            var users = await _context.Users.ToListAsync();
-            foreach (var user in users)
+            var loggedInUser = await _userManager.GetUserAsync(User);
+
+            // 🔥 Debugging: Print What ASP.NET Sees
+            Console.WriteLine("🔍 User Claims:");
+            foreach (var claim in User.Claims)
             {
-                Console.WriteLine($"User: {user.Email}, Role: {user.Role}");  //  Debugging log
+                Console.WriteLine($"{claim.Type}: {claim.Value}");
             }
-            
+
+            Console.WriteLine($"🔍 Checking Access: {loggedInUser?.Email}, Role: {loggedInUser?.Role}");
+
+            if (loggedInUser == null || loggedInUser.Role != "Admin")
+            {
+                Console.WriteLine("❌ Unauthorized Access Attempt!");
+                return Unauthorized(new { message = "Access Denied. Admins Only!" });
+            }
+
+            var users = await _context.Users.ToListAsync();
             return Ok(users);
         }
+
+
+        // [HttpGet]
+        // [Authorize(Roles = "Admin")]
+        // public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        // {
+        //     var loggedInUser = await _userManager.GetUserAsync(User);
+
+        //     // ✅ Debugging Logs
+        //     Console.WriteLine($"🔍 Checking Access: {loggedInUser?.Email}, Role: {loggedInUser?.Role}");
+
+        //     if (loggedInUser == null || loggedInUser.Role != "Admin")
+        //     {
+        //         Console.WriteLine("❌ Unauthorized Access Attempt!");
+        //         return Unauthorized(new { message = "Access Denied. Admins Only!" });
+        //     }
+
+        //     var users = await _context.Users.ToListAsync();
+        //     return Ok(users);
+        // }
+
+        //Made a comment today 27/02 at 20:58
+        // [HttpGet]
+        // [Authorize(Roles = "Admin")]
+        // public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        // {
+        //     var adminUser = await _userManager.GetUserAsync(User);
+
+        //     // 🔹 Extra Debugging Log
+        //     Console.WriteLine($"🔍 Checking Admin Access: {adminUser?.Email}, Role: {adminUser?.Role}");
+
+        //     // 🔹 If user is not found or not an Admin, return Unauthorized
+        //     if (adminUser == null || adminUser.Role != "Admin")
+        //     {
+        //         Console.WriteLine("❌ Unauthorized access: User is not an Admin.");
+        //         return Unauthorized(new { message = "Access Denied. Admins Only!" });
+        //     }
+
+        //     var users = await _context.Users.ToListAsync();
+        //     return Ok(users);
+        // }
+
+        // [HttpGet]
+        // //[Authorize(Roles = "Admin")]
+        // public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        // {
+
+        //     var users = await _context.Users.ToListAsync();
+        //     foreach (var user in users)
+        //     {
+        //         Console.WriteLine($"User: {user.Email}, Role: {user.Role}");  //  Debugging log
+        //     }
+
+        //     return Ok(users);
+        // }
 
         //GET A SINGLE USER
         [HttpGet("{id}")]
