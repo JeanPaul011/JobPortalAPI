@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
-
-
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
 using System.Text;
+
+
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +22,8 @@ builder.Services.AddDbContext<JobPortalContext>(options =>
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<JobPortalContext>()
     .AddSignInManager<SignInManager<User>>() // ✅ FIXED: Added SignInManager.
+    .AddRoleManager<RoleManager<IdentityRole>>() // ✅ Add RoleManager
+    
     .AddDefaultTokenProviders();
 
 // ✅ Configure JWT Authentication
@@ -52,6 +56,14 @@ builder.Services.AddAuthorization(options =>
 // Register Mail Service
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<EmailService>();
+
+// Register Services (Dependency Injection)
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ICompanyService, CompanyService>();
+builder.Services.AddScoped<IJobService, JobService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IJobApplicationService, JobApplicationService>();
+
 
 
 // Register Controllers
