@@ -8409,7 +8409,7 @@
   },
   "projectFileDependencyGroups": {
     "net8.0": [
-      "AspNetCoreRateLimit >= 4.2.0",
+      "AspNetCoreRateLimit >= 5.0.0",
       "Microsoft.AspNetCore.Authentication.JwtBearer >= 8.0.0",
       "Microsoft.AspNetCore.Identity.EntityFrameworkCore >= 8.0.0",
       "Microsoft.AspNetCore.OpenApi >= 8.0.13",
@@ -8465,7 +8465,7 @@
         "dependencies": {
           "AspNetCoreRateLimit": {
             "target": "Package",
-            "version": "[4.2.0, )"
+            "version": "[5.0.0, )"
           },
           "Microsoft.AspNetCore.Authentication.JwtBearer": {
             "target": "Package",
@@ -8528,17 +8528,5 @@
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.406/PortableRuntimeIdentifierGraph.json"
       }
     }
-  },
-  "logs": [
-    {
-      "code": "NU1603",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "JobPortalAPI depends on AspNetCoreRateLimit (>= 4.2.0) but AspNetCoreRateLimit 4.2.0 was not found. An approximate best match of AspNetCoreRateLimit 5.0.0 was resolved.",
-      "libraryId": "AspNetCoreRateLimit",
-      "targetGraphs": [
-        "net8.0"
-      ]
-    }
-  ]
+  }
 }

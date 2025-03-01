@@ -99,9 +99,7 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
-
-var app = builder.Build();
-
+// ✅ Register Rate Limiting services
 builder.Services.AddMemoryCache();
 builder.Services.Configure<IpRateLimitOptions>(options =>
 {
@@ -109,27 +107,17 @@ builder.Services.Configure<IpRateLimitOptions>(options =>
     {
         new RateLimitRule
         {
-            Endpoint = "*", // Apply to all endpoints
-            Period = "1m",  // 1 minute
-            Limit = 100     // Max 100 requests per minute
+            Endpoint = "*",
+            Period = "10s",
+            Limit = 5
         }
     };
 });
-builder.Services.AddInMemoryRateLimiting();
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
-
-
-// ✅ Configure CORS Policy
+builder.Services.AddInMemoryRateLimiting();
+// ✅ Register CORS Policy BEFORE `builder.Build()`
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAllOrigins", policy =>
-{
-    policy.WithOrigins("http://localhost:5276")
-          .AllowAnyMethod()
-          .AllowAnyHeader();
-});
-
-
     options.AddPolicy("AllowAllOrigins", policy =>
     {
         policy.AllowAnyOrigin()
@@ -138,6 +126,7 @@ builder.Services.AddCors(options =>
     });
 });
 
+var app = builder.Build();
 
 
 //Debugging - Print Environment Variables
