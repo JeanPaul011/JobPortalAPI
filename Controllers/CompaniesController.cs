@@ -37,7 +37,7 @@ namespace JobPortalAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Recruiter")]  // ✅ Only Admins & Recruiters can create companies
+        //[Authorize(Roles = "Admin,Recruiter")]  // ✅ Only Admins & Recruiters can create companies
         public async Task<ActionResult<Company>> CreateCompany([FromBody] Company company)
         {
             _context.Companies.Add(company);

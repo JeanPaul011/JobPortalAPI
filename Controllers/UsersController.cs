@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using JobPortalAPI.Services;
 using JobPortalAPI.DTOs;
+using Microsoft.Extensions.Logging;
 
 namespace JobPortalAPI.Controllers
 {
@@ -12,10 +13,12 @@ namespace JobPortalAPI.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly ILogger<UsersController> _logger;
 
-        public UsersController(IUserService userService)
+        public UsersController(IUserService userService, ILogger<UsersController> logger)
         {
             _userService = userService;
+            _logger = logger;
         }
 
         // ✅ GET ALL USERS (Admin Only)
@@ -23,8 +26,17 @@ namespace JobPortalAPI.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IEnumerable<UserDTO>>> GetUsers()
         {
-            var users = await _userService.GetAllUsersAsync();
-            return Ok(users);
+            try
+            {
+                _logger.LogInformation("Fetching all users...");
+                var users = await _userService.GetAllUsersAsync();
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching users.");
+                return StatusCode(500, "Internal server error.");
+            }
         }
 
         // ✅ GET A SINGLE USER
@@ -32,10 +44,22 @@ namespace JobPortalAPI.Controllers
         [Authorize]
         public async Task<ActionResult<UserDTO>> GetUser(string id)
         {
-            var user = await _userService.GetUserByIdAsync(id);
-            if (user == null)
-                return NotFound();
-            return Ok(user);
+            try
+            {
+                _logger.LogInformation($"Fetching user with ID {id}");
+                var user = await _userService.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    _logger.LogWarning($"User with ID {id} not found.");
+                    return NotFound();
+                }
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"An error occurred while fetching user {id}.");
+                return StatusCode(500, "Internal server error.");
+            }
         }
 
         // ✅ UPDATE USER ROLE (Admin Only)
@@ -43,30 +67,36 @@ namespace JobPortalAPI.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateUserRole(string id, [FromBody] UpdateRoleModel model)
         {
-            bool success = await _userService.UpdateUserRoleAsync(id, model.Role);
+            try
+            {
+                _logger.LogInformation($"Attempting to update role for user {id} to {model.Role}");
+                bool success = await _userService.UpdateUserRoleAsync(id, model.Role);
 
-            if (!success)
-                return BadRequest("Failed to update user role. Check if the role exists.");
+                if (!success)
+                {
+                    _logger.LogWarning($"Role update failed for user {id}. Role may not exist.");
+                    return BadRequest("Failed to update user role. Check if the role exists.");
+                }
 
-            return Ok(new { message = "User role updated successfully!", Role = model.Role });
-        }
-
-
-        // DTO for Updating User Role
-        public class UpdateRoleModel
-        {
-            public required string Role { get; set; }
+                _logger.LogInformation($"User role updated successfully for {id}");
+                return Ok(new { message = "User role updated successfully!", Role = model.Role });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error updating user role for {id}");
+                return StatusCode(500, "Internal server error.");
+            }
         }
     }
 }
 
 
 
-        // [HttpGet]
-        // [Authorize(Roles = "Admin")]
-        // public async Task<ActionResult<IEnumerable<User>>> GetUsers()
-        // {
-        //     var loggedInUser = await _userManager.GetUserAsync(User);
+// [HttpGet]
+// [Authorize(Roles = "Admin")]
+// public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+// {
+//     var loggedInUser = await _userManager.GetUserAsync(User);
 
 //     // ✅ Debugging Logs
 //     Console.WriteLine($"🔍 Checking Access: {loggedInUser?.Email}, Role: {loggedInUser?.Role}");
