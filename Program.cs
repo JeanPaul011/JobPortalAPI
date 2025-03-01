@@ -7,6 +7,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using System.Text;
+using AspNetCoreRateLimit;
+using System.Collections.Generic;
+
 
 
 
@@ -14,19 +17,19 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ Register Database Context
+// Register Database Context
 builder.Services.AddDbContext<JobPortalContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Connection")));
 
-// ✅ Register Identity & Authentication
+// Register Identity & Authentication
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<JobPortalContext>()
-    .AddSignInManager<SignInManager<User>>() // ✅ FIXED: Added SignInManager.
-    .AddRoleManager<RoleManager<IdentityRole>>() // ✅ Add RoleManager
+    .AddSignInManager<SignInManager<User>>() // FIXED: Added SignInManager.
+    .AddRoleManager<RoleManager<IdentityRole>>() // Add RoleManager
     
     .AddDefaultTokenProviders();
 
-// ✅ Configure JWT Authentication
+// Configure JWT Authentication
 var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -99,7 +102,53 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// ✅ Ensure Roles Exist Before Running the App
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(options =>
+{
+    options.GeneralRules = new List<RateLimitRule>
+    {
+        new RateLimitRule
+        {
+            Endpoint = "*", // Apply to all endpoints
+            Period = "1m",  // 1 minute
+            Limit = 100     // Max 100 requests per minute
+        }
+    };
+});
+builder.Services.AddInMemoryRateLimiting();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
+
+// ✅ Configure CORS Policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins", policy =>
+{
+    policy.WithOrigins("http://localhost:5276")
+          .AllowAnyMethod()
+          .AllowAnyHeader();
+});
+
+
+    options.AddPolicy("AllowAllOrigins", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+
+
+//Debugging - Print Environment Variables
+Console.WriteLine("🔍 Checking Environment Variables:");
+Console.WriteLine($"🔹 ConnectionString: {builder.Configuration["ConnectionStrings:Connection"]}");
+Console.WriteLine($"🔹 JWT Key: {builder.Configuration["Jwt:Key"]}");
+Console.WriteLine($"🔹 JWT Issuer: {builder.Configuration["Jwt:Issuer"]}");
+Console.WriteLine($"🔹 JWT Expiry: {builder.Configuration["Jwt:ExpireHours"]}");
+
+
+// Ensure Roles Exist Before Running the App
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -114,13 +163,18 @@ using (var scope = app.Services.CreateScope())
         }
     }
 }
+app.UseHttpsRedirection(); // Enforce HTTPS
+app.UseIpRateLimiting();   // Enable Rate Limiting
 
-// ✅ Enable Middleware
+app.UseCors("AllowLocalhost"); // Apply CORS Policy (before authentication)
+
+// Enable Middleware
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+
 
 
