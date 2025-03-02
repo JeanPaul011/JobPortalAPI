@@ -19,3 +19,6 @@ obj/
 *.suo
 *.user
 *.lock.json
+# Ignore appsettings (sensitive data)
+appsettings.json
+appsettings.Production.json
