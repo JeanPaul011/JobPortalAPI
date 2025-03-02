@@ -1,83 +1,50 @@
 using Microsoft.AspNetCore.Mvc;
 using JobPortalAPI.Models;
-using Microsoft.EntityFrameworkCore;
+using JobPortalAPI.Repositories;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Logging; // Added Logging
+using Microsoft.Extensions.Logging;
 
 namespace JobPortalAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/jobapplications")]
     [ApiController]
     public class JobApplicationsController : ControllerBase
     {
-        private readonly JobPortalContext _context;
-        private readonly ILogger<JobApplicationsController> _logger; // Added Logging
+        private readonly IJobApplicationRepository _jobApplicationRepository;
+        private readonly ILogger<JobApplicationsController> _logger;
 
-        public JobApplicationsController(JobPortalContext context, ILogger<JobApplicationsController> logger)
+        public JobApplicationsController(IJobApplicationRepository jobApplicationRepository, ILogger<JobApplicationsController> logger)
         {
-            _context = context;
+            _jobApplicationRepository = jobApplicationRepository;
             _logger = logger;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<JobApplication>>> GetJobApplications()
         {
-            try
-            {
-                _logger.LogInformation("Fetching all job applications.");
-                return await _context.JobApplications.Include(j => j.Job).Include(j => j.JobSeeker).ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching job applications.");
-                return StatusCode(500, "Internal server error");
-            }
+            return Ok(await _jobApplicationRepository.GetAllAsync());
         }
 
         [HttpPost]
-        [Authorize(Roles = "JobSeeker")]
+        //[Authorize(Roles = "JobSeeker")]
         public async Task<ActionResult<JobApplication>> ApplyForJob(JobApplication jobApplication)
         {
-            try
-            {
-                _logger.LogInformation("Applying for job with ID {JobId} by user {JobSeekerId}", jobApplication.JobId, jobApplication.JobSeekerId);
-                _context.JobApplications.Add(jobApplication);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetJobApplications), new { id = jobApplication.Id }, jobApplication);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error applying for job.");
-                return StatusCode(500, "Internal server error");
-            }
+            await _jobApplicationRepository.AddAsync(jobApplication);
+            return CreatedAtAction(nameof(GetJobApplications), new { id = jobApplication.Id }, jobApplication);
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin,Recruiter")]
+        //[Authorize(Roles = "Admin,Recruiter")]
         public async Task<IActionResult> DeleteJobApplication(int id)
         {
-            try
-            {
-                _logger.LogInformation("Deleting job application with ID {Id}", id);
-                var jobApplication = await _context.JobApplications.FindAsync(id);
-                if (jobApplication == null)
-                {
-                    _logger.LogWarning("Job application with ID {Id} not found.", id);
-                    return NotFound();
-                }
+            var exists = await _jobApplicationRepository.ExistsAsync(j => j.Id == id);
+            if (!exists)
+                return NotFound();
 
-                _context.JobApplications.Remove(jobApplication);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Job application with ID {Id} deleted.", id);
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting job application with ID {Id}", id);
-                return StatusCode(500, "Internal server error");
-            }
+            await _jobApplicationRepository.DeleteAsync(id);
+            return NoContent();
         }
     }
 }

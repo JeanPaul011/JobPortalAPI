@@ -1,105 +1,60 @@
 using Microsoft.AspNetCore.Mvc;
 using JobPortalAPI.Models;
-using Microsoft.EntityFrameworkCore;
+using JobPortalAPI.Repositories;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Logging; // ✅ Added Logging
+using Microsoft.Extensions.Logging;
 
 namespace JobPortalAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/reviews")]
     [ApiController]
     public class ReviewsController : ControllerBase
     {
-        private readonly JobPortalContext _context;
-        private readonly ILogger<ReviewsController> _logger; // ✅ Added Logging
+        private readonly IReviewRepository _reviewRepository;
+        private readonly ILogger<ReviewsController> _logger;
 
-        public ReviewsController(JobPortalContext context, ILogger<ReviewsController> logger)
+        public ReviewsController(IReviewRepository reviewRepository, ILogger<ReviewsController> logger)
         {
-            _context = context;
+            _reviewRepository = reviewRepository;
             _logger = logger;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Review>>> GetReviews()
         {
-            try
-            {
-                _logger.LogInformation("Fetching all reviews.");
-                return await _context.Reviews.Include(r => r.Company).Include(r => r.User).ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching reviews.");
-                return StatusCode(500, "Internal server error");
-            }
+            return Ok(await _reviewRepository.GetAllAsync());
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Review>> GetReview(int id)
         {
-            try
-            {
-                _logger.LogInformation("Fetching review with ID {Id}", id);
-                var review = await _context.Reviews.Include(r => r.Company).Include(r => r.User)
-                    .FirstOrDefaultAsync(r => r.Id == id);
-                if (review == null)
-                {
-                    _logger.LogWarning("Review with ID {Id} not found.", id);
-                    return NotFound();
-                }
-                return review;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching review with ID {Id}", id);
-                return StatusCode(500, "Internal server error");
-            }
+            var review = await _reviewRepository.GetByIdAsync(id);
+            if (review == null)
+                return NotFound();
+
+            return Ok(review);
         }
 
         [HttpPost]
-        [Authorize(Roles = "JobSeeker")]
+        //[Authorize(Roles = "JobSeeker")]
         public async Task<ActionResult<Review>> CreateReview(Review review)
         {
-            try
-            {
-                _logger.LogInformation("Creating a new review for company ID {CompanyId}", review.CompanyId);
-                _context.Reviews.Add(review);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetReview), new { id = review.Id }, review);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating review.");
-                return StatusCode(500, "Internal server error");
-            }
+            await _reviewRepository.AddAsync(review);
+            return CreatedAtAction(nameof(GetReview), new { id = review.Id }, review);
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteReview(int id)
         {
-            try
-            {
-                _logger.LogInformation("Deleting review with ID {Id}", id);
-                var review = await _context.Reviews.FindAsync(id);
-                if (review == null)
-                {
-                    _logger.LogWarning("Review with ID {Id} not found.", id);
-                    return NotFound();
-                }
+            var exists = await _reviewRepository.ExistsAsync(r => r.Id == id);
+            if (!exists)
+                return NotFound();
 
-                _context.Reviews.Remove(review);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Review with ID {Id} deleted.", id);
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting review with ID {Id}", id);
-                return StatusCode(500, "Internal server error");
-            }
+            await _reviewRepository.DeleteAsync(id);
+            return NoContent();
         }
     }
 }

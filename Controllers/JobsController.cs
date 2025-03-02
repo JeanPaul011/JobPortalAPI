@@ -1,110 +1,64 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using JobPortalAPI.Models;
-using Microsoft.EntityFrameworkCore;
+using JobPortalAPI.Repositories;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace JobPortalAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/jobs")]
     [ApiController]
     public class JobsController : ControllerBase
     {
-        private readonly JobPortalContext _context;
+        private readonly IJobRepository _jobRepository;
         private readonly ILogger<JobsController> _logger;
 
-        public JobsController(JobPortalContext context, ILogger<JobsController> logger)
+        public JobsController(IJobRepository jobRepository, ILogger<JobsController> logger)
         {
-            _context = context;
+            _jobRepository = jobRepository;
             _logger = logger;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Job>>> GetJobs()
         {
-            try
-            {
-                _logger.LogInformation("Fetching all jobs...");
-                return await _context.Jobs.ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving jobs.");
-                return StatusCode(500, "Internal server error.");
-            }
+            return Ok(await _jobRepository.GetAllAsync());
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Job>> GetJob(int id)
         {
-            try
-            {
-                _logger.LogInformation($"Fetching job with ID {id}");
-                var job = await _context.Jobs.FindAsync(id);
-                if (job == null)
-                {
-                    _logger.LogWarning($"Job with ID {id} not found.");
-                    return NotFound();
-                }
-                return job;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error retrieving job {id}.");
-                return StatusCode(500, "Internal server error.");
-            }
+            var job = await _jobRepository.GetByIdAsync(id);
+            if (job == null)
+                return NotFound();
+
+            return Ok(job);
         }
 
         [HttpPost]
+        //[Authorize(Roles = "Recruiter")]
         public async Task<ActionResult<Job>> CreateJob([FromBody] Job job)
         {
-            try
-            {
-                _logger.LogInformation($"Creating job: {job.Title}");
+            var companyExists = await _jobRepository.CompanyExistsAsync(job.CompanyId);
+            if (!companyExists)
+                return BadRequest("Company does not exist!");
 
-                var companyExists = await _context.Companies.AnyAsync(c => c.Id == job.CompanyId);
-                if (!companyExists)
-                {
-                    _logger.LogWarning($"Company ID {job.CompanyId} does not exist.");
-                    return BadRequest("Company does not exist!");
-                }
-
-                _context.Jobs.Add(job);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation($"Job '{job.Title}' created successfully!");
-                return CreatedAtAction(nameof(GetJob), new { id = job.Id }, job);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating job.");
-                return StatusCode(500, "Internal server error.");
-            }
+            await _jobRepository.AddAsync(job);
+            return CreatedAtAction(nameof(GetJob), new { id = job.Id }, job);
         }
 
         [HttpDelete("{id}")]
+        //[Authorize(Roles = "Recruiter, Admin")]
         public async Task<IActionResult> DeleteJob(int id)
         {
-            try
-            {
-                var job = await _context.Jobs.FindAsync(id);
-                if (job == null)
-                {
-                    _logger.LogWarning($"Job with ID {id} not found.");
-                    return NotFound();
-                }
+            var exists = await _jobRepository.ExistsAsync(j => j.Id == id);
+            if (!exists)
+                return NotFound();
 
-                _context.Jobs.Remove(job);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation($"Job with ID {id} deleted.");
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error deleting job {id}.");
-                return StatusCode(500, "Internal server error.");
-            }
+            await _jobRepository.DeleteAsync(id);
+            return NoContent();
         }
     }
 }

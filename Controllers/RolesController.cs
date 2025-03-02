@@ -10,7 +10,7 @@ namespace JobPortalAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")] // Only Admins Can Manage Roles
+    //[Authorize(Roles = "Admin")] // Only Admins Can Manage Roles
     public class RolesController : ControllerBase
     {
         private readonly RoleManager<IdentityRole> _roleManager;

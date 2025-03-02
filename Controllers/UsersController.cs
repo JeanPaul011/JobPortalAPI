@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using JobPortalAPI.Models;
+using JobPortalAPI.Repositories;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using JobPortalAPI.Services;
-using JobPortalAPI.DTOs;
 using Microsoft.Extensions.Logging;
 
 namespace JobPortalAPI.Controllers
@@ -12,85 +12,33 @@ namespace JobPortalAPI.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private readonly IUserService _userService;
+        private readonly IUserRepository _userRepository;
         private readonly ILogger<UsersController> _logger;
 
-        public UsersController(IUserService userService, ILogger<UsersController> logger)
+        public UsersController(IUserRepository userRepository, ILogger<UsersController> logger)
         {
-            _userService = userService;
+            _userRepository = userRepository;
             _logger = logger;
         }
 
-        // ✅ GET ALL USERS (Admin Only)
         [HttpGet]
-        [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<IEnumerable<UserDTO>>> GetUsers()
+        //[Authorize(Roles = "Admin")]
+        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
-            try
-            {
-                _logger.LogInformation("Fetching all users...");
-                var users = await _userService.GetAllUsersAsync();
-                return Ok(users);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while fetching users.");
-                return StatusCode(500, "Internal server error.");
-            }
+            return Ok(await _userRepository.GetAllAsync());
         }
 
-        // ✅ GET A SINGLE USER
         [HttpGet("{id}")]
-        [Authorize]
-        public async Task<ActionResult<UserDTO>> GetUser(string id)
+        public async Task<ActionResult<User>> GetUser(string id)
         {
-            try
-            {
-                _logger.LogInformation($"Fetching user with ID {id}");
-                var user = await _userService.GetUserByIdAsync(id);
-                if (user == null)
-                {
-                    _logger.LogWarning($"User with ID {id} not found.");
-                    return NotFound();
-                }
-                return Ok(user);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"An error occurred while fetching user {id}.");
-                return StatusCode(500, "Internal server error.");
-            }
-        }
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+                return NotFound();
 
-        // ✅ UPDATE USER ROLE (Admin Only)
-        [HttpPut("{id}/role")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateUserRole(string id, [FromBody] UpdateRoleModel model)
-        {
-            try
-            {
-                _logger.LogInformation($"Attempting to update role for user {id} to {model.Role}");
-                bool success = await _userService.UpdateUserRoleAsync(id, model.Role);
-
-                if (!success)
-                {
-                    _logger.LogWarning($"Role update failed for user {id}. Role may not exist.");
-                    return BadRequest("Failed to update user role. Check if the role exists.");
-                }
-
-                _logger.LogInformation($"User role updated successfully for {id}");
-                return Ok(new { message = "User role updated successfully!", Role = model.Role });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error updating user role for {id}");
-                return StatusCode(500, "Internal server error.");
-            }
+            return Ok(user);
         }
     }
 }
-
-
 
 // [HttpGet]
 // [Authorize(Roles = "Admin")]

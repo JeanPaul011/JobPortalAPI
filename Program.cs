@@ -1,5 +1,6 @@
 using JobPortalAPI.Models;
 using JobPortalAPI.Services;
+using JobPortalAPI.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -8,29 +9,32 @@ using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using System.Text;
 using AspNetCoreRateLimit;
-using System.Collections.Generic;
-
-
-
-
-
+using DotNetEnv;
+Env.Load(); // ✅ Loads environment variables from .env file
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register Database Context
-builder.Services.AddDbContext<JobPortalContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("Connection")));
+// ✅ Load Configurations Securely
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile("appsettings.Production.json", optional: true, reloadOnChange: true) // 🔒 Production settings
+    .AddEnvironmentVariables(); // 🔒 Load ENV variables if available
 
-// Register Identity & Authentication
+// ✅ Register Database Context
+var connectionString = builder.Configuration["ConnectionStrings:Connection"] ?? throw new Exception("Database connection is missing!");
+builder.Services.AddDbContext<JobPortalContext>(options => options.UseSqlite(connectionString));
+
+// ✅ Register Identity & Authentication
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<JobPortalContext>()
-    .AddSignInManager<SignInManager<User>>() // FIXED: Added SignInManager.
-    .AddRoleManager<RoleManager<IdentityRole>>() // Add RoleManager
-    
+    .AddSignInManager<SignInManager<User>>()
+    .AddRoleManager<RoleManager<IdentityRole>>()
     .AddDefaultTokenProviders();
 
-// Configure JWT Authentication
-var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
+// ✅ Configure JWT Authentication (Now Reads from ENV)
+var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new Exception("JWT Key is missing!");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "https://localhost:5276";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -40,14 +44,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Issuer"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
-            RoleClaimType = ClaimTypes.Role //"http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtIssuer,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            RoleClaimType = "role"
         };
     });
 
-// Register Authorization
+// ✅ Register Authorization Policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
@@ -55,50 +59,25 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("RequireUserRole", policy => policy.RequireRole("JobSeeker"));
 });
 
-
-// Register Mail Service
+// ✅ Register Mail Service (Hides Email Password)
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<EmailService>();
 
-// Register Services (Dependency Injection)
+// ✅ Register Application Services
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IJobApplicationService, JobApplicationService>();
 
+// ✅ Register Repositories
+builder.Services.AddScoped<IJobRepository, JobRepository>();
+builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+builder.Services.AddScoped<IJobApplicationRepository, JobApplicationRepository>();
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
-
-// Register Controllers
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Enter 'Bearer' [space] and then your valid token."
-    });
-
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
-});
 // ✅ Register Rate Limiting services
 builder.Services.AddMemoryCache();
 builder.Services.Configure<IpRateLimitOptions>(options =>
@@ -115,7 +94,8 @@ builder.Services.Configure<IpRateLimitOptions>(options =>
 });
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 builder.Services.AddInMemoryRateLimiting();
-// ✅ Register CORS Policy BEFORE `builder.Build()`
+
+// ✅ Register CORS Policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllOrigins", policy =>
@@ -128,16 +108,14 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-
-//Debugging - Print Environment Variables
+// ✅ Debugging - Print Environment Variables
 Console.WriteLine("🔍 Checking Environment Variables:");
-Console.WriteLine($"🔹 ConnectionString: {builder.Configuration["ConnectionStrings:Connection"]}");
-Console.WriteLine($"🔹 JWT Key: {builder.Configuration["Jwt:Key"]}");
-Console.WriteLine($"🔹 JWT Issuer: {builder.Configuration["Jwt:Issuer"]}");
+Console.WriteLine($"🔹 ConnectionString: {connectionString}");
+Console.WriteLine($"🔹 JWT Key: {(string.IsNullOrEmpty(jwtKey) ? "❌ MISSING" : "✅ OK")}");
+Console.WriteLine($"🔹 JWT Issuer: {jwtIssuer}");
 Console.WriteLine($"🔹 JWT Expiry: {builder.Configuration["Jwt:ExpireHours"]}");
 
-
-// Ensure Roles Exist Before Running the App
+// ✅ Ensure Roles Exist Before Running the App
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -148,14 +126,14 @@ using (var scope = app.Services.CreateScope())
         if (!await roleManager.RoleExistsAsync(role))
         {
             await roleManager.CreateAsync(new IdentityRole(role));
-            Console.WriteLine($" Created role: {role}"); //  Debugging Log
+            Console.WriteLine($"✅ Created role: {role}");
         }
     }
 }
+
 app.UseHttpsRedirection(); // Enforce HTTPS
 app.UseIpRateLimiting();   // Enable Rate Limiting
-
-app.UseCors("AllowLocalhost"); // Apply CORS Policy (before authentication)
+app.UseCors("AllowAllOrigins"); // Apply CORS Policy
 
 // Enable Middleware
 app.UseSwagger();
@@ -164,6 +142,3 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
-
-
-

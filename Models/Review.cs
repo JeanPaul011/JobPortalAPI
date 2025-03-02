@@ -12,9 +12,9 @@ namespace JobPortalAPI.Models
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
 
         [JsonIgnore]
-        public User User { get; set; } = null!;
+        public User? User { get; set; } = null!;
 
         [JsonIgnore]
-        public Company Company { get; set; } = null!;
+        public Company? Company { get; set; } = null!;
     }
 }
