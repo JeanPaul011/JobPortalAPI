@@ -1,151 +1,127 @@
-JobPortalAPI
+Overview
 
-Project Overview
+JobPortalAPI is a .NET 8.0 Web API designed for job management, allowing users to register, post jobs, apply for jobs, and leave reviews for companies. The API provides user authentication, job management, and company management. The project is structured to be run locally with SQLite and deployed on Azure through Visual Studio Code.
 
-JobPortalAPI is a .NET 8.0 Web API that allows users to interact with a job portal system. It supports user authentication using JWT, job listings, company management, job applications, and reviews. The project is containerized with Docker and deployed on Azure with an SQL Server database.
+How to Run
 
-Technologies Used
+Open the project in Visual Studio Code.
 
-.NET 8.0 (ASP.NET Core Web API)
+Ensure that you have the necessary dependencies installed by running dotnet restore.
 
-Entity Framework Core using SQLite for local development and SQL Server for production
-
-JWT authentication
-
-Docker for containerization
-
-Azure Web App for deployment
-
-Gmail SMTP for email notifications
-
-IP-based rate limiting
-
-Postman for API testing
-
-Features
-
-User authentication and role management for admin, recruiters, and job seekers
-
-Job posting and applications allowing recruiters to post jobs and job seekers to apply
-
-Company management where recruiters can create and manage companies
-
-Reviews where users can leave feedback on companies
-
-Email notifications for important events
-
-Rate limiting to prevent API abuse
-
-Project Structure
-
-Controllers contain API endpoints for users, jobs, applications, companies, and reviews
-
-Models define the database structure
-
-DTOs are used for data transfer to avoid exposing sensitive fields
-
-Repositories handle database queries
-
-Services contain business logic such as email and user management
-
-Migrations contain the database schema history
-
-appsettings.json holds application configuration
-
-.env file contains environment variables and is ignored in version control
-
-Dockerfile sets up the container
-
-Program.cs configures the API
-
-Setup Instructions
-
-Clone the repository and navigate into the project directory.
-
-git clone https://github.com/yourusername/JobPortalAPI.git
-cd JobPortalAPI
-
-Create a .env file in the project root with the following variables:
-
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
-SMTP_EMAIL=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
-DB_CONNECTION=Server=tcp:jobportal-sqlserver.database.windows.net,1433;Initial Catalog=jobportal-db;Persist Security Info=False;User ID=adminuser;Password=YourStrongPassword123!;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
-JWT_SECRET=YourSuperSecureJWTSecret
-JWT_ISSUER=https://your-api.azurewebsites.net
-
-Run the API locally using the following command:
-
-dotnet run
+Start the API by running dotnet run in the terminal.
 
 The API will start on https://localhost:5276.
 
-Build and run the Docker container:
+Open a browser and navigate to https://localhost:5276/swagger to test endpoints.
 
-docker build -t jobportal-api .
-docker run -p 5276:5276 --env-file .env jobportal-api
+How to Use Swagger
 
-Deploy to Azure using the following command:
+Swagger allows users to interact with the API without needing a separate client application.
 
-az webapp up --name jobportal-api --resource-group JobPortalAPI-RG --runtime "DOTNETCORE|8.0" --os-type Windows
+Open https://localhost:5276/swagger in a browser.
 
-Ensure your Azure SQL database is set up before deployment.
+Use the POST /api/auth/register endpoint to create a user.
 
-API Endpoints
+Use the POST /api/auth/login endpoint to generate a JWT token.
 
-Authentication:
+Copy the token and click Authorize in Swagger to enable protected endpoints.
 
-Register a new user at /api/auth/register
+Use the various GET, POST, PUT, DELETE endpoints to interact with jobs, companies, applications, and reviews.
 
-Login and get a JWT token at /api/auth/login
+API Functions
 
-Users:
+User Authentication
 
-Get all users at /api/users (Admin only)
+Register new users.
 
-Get a user by ID at /api/users/{id}
+Login to receive a JWT token.
 
-Companies:
+Job Management
 
-Create a new company at /api/companies (Recruiter only)
+Create and view job postings.
 
-Get all companies at /api/companies
+Apply for jobs.
 
-Jobs:
+Company Management
 
-Create a job posting at /api/jobs
+Add and view companies.
 
-Get all jobs at /api/jobs
+Reviews
 
-Job Applications:
+Users can submit reviews for companies.
 
-Apply for a job at /api/jobapplications
+Folder Structure
 
-Get all applications at /api/jobapplications (Admin only)
+Controllers
 
-Reviews:
+Handles API requests for users, jobs, applications, companies, and reviews.
 
-Submit a company review at /api/reviews
+Each controller maps to a specific resource and processes incoming HTTP requests.
 
-Get all reviews at /api/reviews
+Models
+
+Defines the structure of database entities like Users, Jobs, Applications, Companies, and Reviews.
+
+DTOs
+
+Data Transfer Objects (DTOs) ensure that only necessary data is exposed in API responses.
+
+Repositories
+
+Handles database operations using Entity Framework.
+
+Contains query logic for fetching and storing data.
+
+Services
+
+Contains business logic separate from controllers.
+
+Handles email sending, job applications, and general user interactions.
+
+Migrations
+
+Tracks database schema changes.
+
+Contains scripts for updating the database structure.
+
+appsettings.json
+
+Stores configuration settings for database connections and JWT authentication.
+
+ConnectionStrings contains the SQLite connection string for local development.
+
+Jwt section includes the secret key and issuer information for authentication.
+
+EmailSettings configures the SMTP server for email notifications.
+
+Program.cs
+
+Configures dependency injection for repositories and services.
+
+Sets up authentication and authorization.
+
+Enables API routing and Swagger UI.
+
+How to Deploy on Azure
+
+Open Visual Studio Code and ensure the Azure extension is installed.
+
+Click on the Azure section and sign in to your Azure account.
+
+Create a new Azure Web App by providing a name and selecting .NET 8.0.
+
+Deploy the project using the Azure section in Visual Studio Code.
+
+Check the Microsoft Azure Resource Groups to confirm the API is running.
+
+Click on the deployed JobPortalAPI link to test it.
 
 Troubleshooting
 
-If you see JWT_SECRET is missing, ensure the .env file is loaded properly.
+If the API does not start, check that all dependencies are installed by running dotnet restore.
 
-If you see Email Sending Failed: SMTP_EMAIL is missing, check that SMTP environment variables are correctly set.
+If Swagger does not show endpoints, ensure the correct port is being used.
 
-If the database connection fails, ensure Azure SQL Server is correctly configured.
+If email notifications fail, verify the SMTP settings in appsettings.json and environment variables.
 
-If you receive unauthorized access errors, make sure you include a valid Bearer token in API requests.
-
-Submission Instructions
-
-Ensure the API is successfully deployed to Azure.
-
-Include all necessary files such as the .env file, database migrations, and the README.
-
-If required, add API documentation and a Postman collection.
-
-Perform a final test to confirm that all API endpoints function correctly.
+If the database is not loading, confirm that migrations are applied using dotnet ef database update.
