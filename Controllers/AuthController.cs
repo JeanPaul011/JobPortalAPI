@@ -37,7 +37,7 @@ namespace JobPortalAPI.Controllers
             _logger = logger;
         }
 
-        // ✅ REGISTER USER
+        // REGISTER USER
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] AuthModel model, [FromServices] EmailService emailService)
         {
@@ -48,13 +48,13 @@ namespace JobPortalAPI.Controllers
                 var existingUser = await _userManager.FindByEmailAsync(model.Email);
                 if (existingUser != null)
                 {
-                    _logger.LogWarning("❌ User already exists: {Email}", model.Email);
+                    _logger.LogWarning("User already exists: {Email}", model.Email);
                     return BadRequest(new { message = "User already exists!" });
                 }
 
                 if (model.Role != "Admin" && model.Role != "Recruiter" && model.Role != "JobSeeker")
                 {
-                    _logger.LogWarning("❌ Invalid role: {Role}", model.Role);
+                    _logger.LogWarning("Invalid role: {Role}", model.Role);
                     return BadRequest(new { message = "Invalid role. Allowed: Admin, Recruiter, JobSeeker." });
                 }
 
@@ -69,51 +69,51 @@ namespace JobPortalAPI.Controllers
                 var result = await _userManager.CreateAsync(user, model.Password);
                 if (!result.Succeeded)
                 {
-                    _logger.LogError("❌ User creation failed: {Errors}", result.Errors);
+                    _logger.LogError("User creation failed: {Errors}", result.Errors);
                     return BadRequest(result.Errors);
                 }
 
                 await _userManager.AddToRoleAsync(user, model.Role);
 
-                // ✅ Generate Refresh Token
+                // Generate Refresh Token
                 user.RefreshToken = GenerateRefreshToken();
                 user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(Convert.ToInt32(_configuration["Jwt:RefreshTokenExpireDays"]));
                 await _userManager.UpdateAsync(user);
 
-                // ✅ Send Welcome Email
+                // Send Welcome Email
                 string subject = "Welcome to Job Portal!";
                 string body = $"<h3>Hi {user.FullName},</h3><p>Your account has been successfully created.</p>";
                 await emailService.SendEmailAsync(user.Email, subject, body);
 
-                _logger.LogInformation("✅ User registered successfully: {Email}", user.Email);
+                _logger.LogInformation("User registered successfully: {Email}", user.Email);
                 return Ok(new { message = "User registered successfully! An email has been sent.", user.Role });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Exception in Register method");
+                _logger.LogError(ex, "Exception in Register method");
                 return StatusCode(500, "Internal server error");
             }
         }
 
-        // ✅ LOGIN & GET JWT + REFRESH TOKEN
+        // LOGIN & GET JWT + REFRESH TOKEN
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
             try
             {
-                _logger.LogInformation("🔹 Login attempt: {Email}", model.Email);
+                _logger.LogInformation("Login attempt: {Email}", model.Email);
 
                 var user = await _userManager.FindByEmailAsync(model.Email);
                 if (user == null)
                 {
-                    _logger.LogWarning("❌ Invalid login attempt: {Email}", model.Email);
+                    _logger.LogWarning("Invalid login attempt: {Email}", model.Email);
                     return Unauthorized("Invalid credentials.");
                 }
 
                 var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
                 if (!result.Succeeded)
                 {
-                    _logger.LogWarning("❌ Invalid login credentials: {Email}", model.Email);
+                    _logger.LogWarning("Invalid login credentials: {Email}", model.Email);
                     return Unauthorized("Invalid credentials.");
                 }
 
@@ -126,22 +126,22 @@ namespace JobPortalAPI.Controllers
                 var updateResult = await _userManager.UpdateAsync(user);
                 if (!updateResult.Succeeded)
                 {
-                    _logger.LogError("❌ Failed to save refresh token for {Email}", model.Email);
+                    _logger.LogError("Failed to save refresh token for {Email}", model.Email);
                     return StatusCode(500, "Failed to store refresh token.");
                 }
 
-                _logger.LogInformation($"✅ JWT Token & Refresh Token issued for {user.Email}");
+                _logger.LogInformation($"JWT Token & Refresh Token issued for {user.Email}");
 
                 return Ok(new { Token = token, RefreshToken = refreshToken });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Exception in Login method");
+                _logger.LogError(ex, " Exception in Login method");
                 return StatusCode(500, "Internal server error");
             }
         }
 
-        // ✅ REFRESH TOKEN
+        // REFRESH TOKEN
         [HttpPost("refresh")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenModel model)
         {
@@ -151,7 +151,7 @@ namespace JobPortalAPI.Controllers
 
                 if (user == null || user.RefreshTokenExpiry < DateTime.UtcNow)
                 {
-                    _logger.LogWarning("❌ Invalid or expired refresh token.");
+                    _logger.LogWarning(" Invalid or expired refresh token.");
                     return Unauthorized("Invalid or expired refresh token.");
                 }
 
@@ -164,22 +164,22 @@ namespace JobPortalAPI.Controllers
                 var updateResult = await _userManager.UpdateAsync(user);
                 if (!updateResult.Succeeded)
                 {
-                    _logger.LogError("❌ Failed to update refresh token for {Email}", user.Email);
+                    _logger.LogError("Failed to update refresh token for {Email}", user.Email);
                     return StatusCode(500, "Failed to update refresh token.");
                 }
 
-                _logger.LogInformation($"✅ New JWT & Refresh Token issued for {user.Email}");
+                _logger.LogInformation($" New JWT & Refresh Token issued for {user.Email}");
 
                 return Ok(new { Token = newAccessToken, RefreshToken = newRefreshToken });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error refreshing token.");
+                _logger.LogError(ex, " Error refreshing token.");
                 return StatusCode(500, "Internal server error.");
             }
         }
 
-        // ✅ JWT TOKEN GENERATION
+        // JWT TOKEN GENERATION
         private string GenerateJwtToken(User user)
         {
             var claims = new List<Claim>
@@ -203,14 +203,14 @@ namespace JobPortalAPI.Controllers
             ));
         }
 
-        // ✅ REFRESH TOKEN GENERATION
+        // REFRESH TOKEN GENERATION
         private string GenerateRefreshToken()
         {
             return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
         }
     }
 
-    // ✅ REQUEST MODELS
+    // REQUEST MODELS
     public class AuthModel
     {
         public required string Email { get; set; }

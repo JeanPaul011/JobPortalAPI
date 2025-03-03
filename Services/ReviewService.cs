@@ -23,7 +23,7 @@ namespace JobPortalAPI.Services
                 {
                     Id = r.Id,
                     CompanyId = r.CompanyId,
-                    Content = r.Comment,  // ✅ FIXED: Changed Content → Comment
+                    Content = r.Comment,  
                     Rating = r.Rating
                 }).ToListAsync();
         }
@@ -35,7 +35,7 @@ namespace JobPortalAPI.Services
             {
                 Id = review.Id,
                 CompanyId = review.CompanyId,
-                Content = review.Comment,  // ✅ FIXED: Changed Content → Comment
+                Content = review.Comment,  
                 Rating = review.Rating
             };
         }
@@ -45,7 +45,7 @@ namespace JobPortalAPI.Services
             var review = new Review
             {
                 CompanyId = reviewDto.CompanyId,
-                Comment = reviewDto.Content,  // ✅ FIXED: Changed Content → Comment
+                Comment = reviewDto.Content,  
                 Rating = reviewDto.Rating
             };
 

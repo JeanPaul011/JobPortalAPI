@@ -47,30 +47,30 @@ namespace JobPortalAPI.Services
             };
         }
 
-        // ✅ Update User Role - FIXED RoleManager
+        //  Update User Role - FIXED RoleManager
         public async Task<bool> UpdateUserRoleAsync(string id, string newRole)
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
                 return false;
 
-            // ✅ Check if the role exists
+            //  Check if the role exists
             if (!await _roleManager.RoleExistsAsync(newRole))
                 return false;
 
-            // ✅ Remove existing roles before assigning a new one
+            //  Remove existing roles before assigning a new one
             var currentRoles = await _userManager.GetRolesAsync(user);
             await _userManager.RemoveFromRolesAsync(user, currentRoles);
 
-            // ✅ Assign the new role
+            //  Assign the new role
             var result = await _userManager.AddToRoleAsync(user, newRole);
             if (!result.Succeeded)
                 return false;
 
-            // ✅ Update the role in the database
+            //  Update the role in the database
             user.Role = newRole;
             await _userManager.UpdateAsync(user);
-            return true; // ✅ Return Task<bool> instead of void
+            return true; 
         }
 
     public class ServiceResponse

@@ -8,9 +8,9 @@ namespace JobPortalAPI.Models
         public string FullName { get; set; } = string.Empty;
         public string Role { get; set; } = "JobSeeker";
 
-        // ✅ Add Refresh Token Support
-        public string? RefreshToken { get; set; }  // ✅ Stores Refresh Token
-        public DateTime? RefreshTokenExpiry { get; set; }  // ✅ Expiry of Refresh Token
+        // Add Refresh Token Support
+        public string? RefreshToken { get; set; }  // Stores Refresh Token
+        public DateTime? RefreshTokenExpiry { get; set; }  // Expiry of Refresh Token
 
         [JsonIgnore]
         public List<JobApplication>? Applications { get; set; }

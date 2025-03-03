@@ -1,57 +1,60 @@
+using System;
 using System.Net;
 using System.Net.Mail;
-using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
 
 namespace JobPortalAPI.Services
 {
-    public class EmailSettings
-    {
-        public string SmtpServer { get; set; } = string.Empty;
-        public int SmtpPort { get; set; }
-        public string SenderEmail { get; set; } = string.Empty;
-        public string SenderName { get; set; } = string.Empty;
-        public string SenderPassword { get; set; } = string.Empty;
-    }
-
     public class EmailService
     {
-        private readonly EmailSettings _emailSettings;
-
-        public EmailService(IOptions<EmailSettings> emailSettings)
-        {
-            _emailSettings = emailSettings.Value;
-        }
-
         public async Task<bool> SendEmailAsync(string recipientEmail, string subject, string body)
         {
             try
             {
-                using var client = new SmtpClient(_emailSettings.SmtpServer)
+                // Fix: Use Correct Environment Variable Names
+                string smtpServer = Environment.GetEnvironmentVariable("SMTP_SERVER") ?? throw new Exception("SMTP_SERVER is missing!");
+                int smtpPort = int.Parse(Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587");
+                string senderEmail = Environment.GetEnvironmentVariable("SMTP_EMAIL") ?? throw new Exception("SMTP_EMAIL is missing!");
+                string senderPassword = Environment.GetEnvironmentVariable("SMTP_PASSWORD") ?? throw new Exception("SMTP_PASSWORD is missing!");
+                string senderName = Environment.GetEnvironmentVariable("SMTP_SENDER_NAME") ?? "Job Portal";
+
+                // 🔍 Debugging Output
+                Console.WriteLine(" Email Configuration:");
+                Console.WriteLine($"SMTP Server: {smtpServer}");
+                Console.WriteLine($"SMTP Port: {smtpPort}");
+                Console.WriteLine($"Sender Email: {senderEmail}");
+                Console.WriteLine($"Sender Name: {senderName}");
+                Console.WriteLine($"Sending Email To: {recipientEmail}");
+
+                // Setup SMTP Client
+                using var client = new SmtpClient(smtpServer)
                 {
-                    Port = _emailSettings.SmtpPort,
-                    Credentials = new NetworkCredential(_emailSettings.SenderEmail, _emailSettings.SenderPassword),
+                    Port = smtpPort,
+                    Credentials = new NetworkCredential(senderEmail, senderPassword),
                     EnableSsl = true
                 };
 
+                // Create Email Message
                 var mailMessage = new MailMessage
                 {
-                    From = new MailAddress(_emailSettings.SenderEmail, _emailSettings.SenderName),
+                    From = new MailAddress(senderEmail, senderName),
                     Subject = subject,
                     Body = body,
                     IsBodyHtml = true
                 };
 
                 mailMessage.To.Add(recipientEmail);
+                
+                //  Send Email
                 await client.SendMailAsync(mailMessage);
-
+                Console.WriteLine($" Email successfully sent to {recipientEmail}");
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Email Sending Failed: {ex.Message}");
+                Console.WriteLine($" Email Sending Failed: {ex.Message}");
                 return false;
             }
         }
     }
 }
-

@@ -20,7 +20,7 @@ namespace JobPortalAPI.Repositories
             return await _context.Users.ToListAsync();
         }
 
-        public async Task<User?> GetByIdAsync(string id) // ✅ Override int to string
+        public async Task<User?> GetByIdAsync(string id) 
         {
             return await _context.Users.FindAsync(id);
         }
@@ -42,7 +42,7 @@ namespace JobPortalAPI.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(string id)  // ✅ Override int to string
+        public async Task DeleteAsync(string id)  
         {
             var user = await _context.Users.FindAsync(id);
             if (user != null)
@@ -52,7 +52,7 @@ namespace JobPortalAPI.Repositories
             }
         }
 
-        public async Task<bool> ExistsAsync(string id) // ✅ Override int to string
+        public async Task<bool> ExistsAsync(string id) 
         {
             return await _context.Users.AnyAsync(u => u.Id == id);
         }

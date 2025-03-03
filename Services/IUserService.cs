@@ -8,6 +8,6 @@ namespace JobPortalAPI.Services
     {
         Task<IEnumerable<UserDTO>> GetAllUsersAsync();
         Task<UserDTO?> GetUserByIdAsync(string id);
-        Task<bool> UpdateUserRoleAsync(string id, string newRole);  // ✅ Add this line
+        Task<bool> UpdateUserRoleAsync(string id, string newRole);  
     }
 }

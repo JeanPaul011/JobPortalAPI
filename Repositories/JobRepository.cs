@@ -14,7 +14,7 @@ namespace JobPortalAPI.Repositories
                 .ToListAsync();
         }
 
-        // ✅ Implement the missing method
+        
         public async Task<bool> CompanyExistsAsync(int companyId)
         {
             return await _context.Companies.AnyAsync(c => c.Id == companyId);

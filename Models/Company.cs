@@ -16,6 +16,6 @@ namespace JobPortalAPI.Models
         public List<Review>? Reviews { get; set; }
 
         [JsonIgnore]
-        public List<User> Recruiters { get; set; } = new List<User>();  // ✅ Added (Recruiters manage companies)
+        public List<User> Recruiters { get; set; } = new List<User>();  
     }
 }

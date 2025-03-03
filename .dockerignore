@@ -1,0 +1,20 @@
+# Ignore build & dependency files
+bin/
+obj/
+*.pdb
+*.log
+
+# Ignore database files
+*.db
+Migrations/
+
+# Ignore appsettings (Use environment variables instead)
+#appsettings.json
+#appsettings.Development.json
+#appsettings.Production.json
+
+# Ignore IDE/Editor files
+.vscode/
+*.suo
+*.user
+*.lock.json
