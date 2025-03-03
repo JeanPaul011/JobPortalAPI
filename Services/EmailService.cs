@@ -18,7 +18,7 @@ namespace JobPortalAPI.Services
                 string senderPassword = Environment.GetEnvironmentVariable("SMTP_PASSWORD") ?? throw new Exception("SMTP_PASSWORD is missing!");
                 string senderName = Environment.GetEnvironmentVariable("SMTP_SENDER_NAME") ?? "Job Portal";
 
-                // 🔍 Debugging Output
+                //  Debugging Output
                 Console.WriteLine(" Email Configuration:");
                 Console.WriteLine($"SMTP Server: {smtpServer}");
                 Console.WriteLine($"SMTP Port: {smtpPort}");

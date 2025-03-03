@@ -162,7 +162,7 @@ using (var scope = app.Services.CreateScope())
         }
     }
 }
-Console.WriteLine("🔍 Checking SMTP Environment Variables:");
+Console.WriteLine(" Checking SMTP Environment Variables:");
 Console.WriteLine($"SMTP_SERVER: {Environment.GetEnvironmentVariable("SMTP_SERVER")}");
 Console.WriteLine($"SMTP_PORT: {Environment.GetEnvironmentVariable("SMTP_PORT")}");
 Console.WriteLine($"SMTP_EMAIL: {Environment.GetEnvironmentVariable("SMTP_EMAIL")}");
@@ -175,11 +175,11 @@ using (var scope = app.Services.CreateScope())
     try
     {
         await emailService.SendEmailAsync("test@example.com", "Test Email", "This is a test email from JobPortalAPI.");
-        Console.WriteLine("✅ Test email sent successfully!");
+        Console.WriteLine(" Test email sent successfully!");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"❌ Email sending failed: {ex.Message}");
+        Console.WriteLine($" Email sending failed: {ex.Message}");
     }
 }
 
