@@ -1,59 +1,59 @@
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
+using Microsoft.Extensions.Options;
 using System;
-using System.Net;
-using System.Net.Mail;
 using System.Threading.Tasks;
 
 namespace JobPortalAPI.Services
 {
     public class EmailService
     {
-        public async Task<bool> SendEmailAsync(string recipientEmail, string subject, string body)
+        private readonly EmailSettings _emailSettings;
+
+        public EmailService(IOptions<EmailSettings> emailSettings)
+        {
+            _emailSettings = emailSettings.Value;
+
+            // ✅ Ensure `.env` variables override `appsettings.json`
+            _emailSettings.SmtpServer = Environment.GetEnvironmentVariable("SMTP_SERVER") ?? _emailSettings.SmtpServer;
+            _emailSettings.SmtpPort = int.TryParse(Environment.GetEnvironmentVariable("SMTP_PORT"), out int port) ? port : _emailSettings.SmtpPort;
+            _emailSettings.SenderEmail = Environment.GetEnvironmentVariable("SMTP_EMAIL") ?? _emailSettings.SenderEmail;
+            _emailSettings.SenderPassword = Environment.GetEnvironmentVariable("SMTP_PASSWORD") ?? _emailSettings.SenderPassword;
+            _emailSettings.SenderName = Environment.GetEnvironmentVariable("SMTP_SENDER_NAME") ?? _emailSettings.SenderName;
+        }
+
+        public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
             try
             {
-                // Fix: Use Correct Environment Variable Names
-                string smtpServer = Environment.GetEnvironmentVariable("SMTP_SERVER") ?? throw new Exception("SMTP_SERVER is missing!");
-                int smtpPort = int.Parse(Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587");
-                string senderEmail = Environment.GetEnvironmentVariable("SMTP_EMAIL") ?? throw new Exception("SMTP_EMAIL is missing!");
-                string senderPassword = Environment.GetEnvironmentVariable("SMTP_PASSWORD") ?? throw new Exception("SMTP_PASSWORD is missing!");
-                string senderName = Environment.GetEnvironmentVariable("SMTP_SENDER_NAME") ?? "Job Portal";
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress(_emailSettings.SenderName, _emailSettings.SenderEmail));
+                message.To.Add(new MailboxAddress("Recipient", toEmail));
+                message.Subject = subject;
+                message.Body = new TextPart("plain") { Text = body };
 
-                //  Debugging Output
-                Console.WriteLine(" Email Configuration:");
-                Console.WriteLine($"SMTP Server: {smtpServer}");
-                Console.WriteLine($"SMTP Port: {smtpPort}");
-                Console.WriteLine($"Sender Email: {senderEmail}");
-                Console.WriteLine($"Sender Name: {senderName}");
-                Console.WriteLine($"Sending Email To: {recipientEmail}");
-
-                // Setup SMTP Client
-                using var client = new SmtpClient(smtpServer)
+                using (var client = new SmtpClient())
                 {
-                    Port = smtpPort,
-                    Credentials = new NetworkCredential(senderEmail, senderPassword),
-                    EnableSsl = true
-                };
+                    // ✅ Print Debugging Information
+                    Console.WriteLine("🚀 DEBUG: Checking EmailService Configuration...");
+                    Console.WriteLine($"✅ SMTP_SERVER: {_emailSettings.SmtpServer}");
+                    Console.WriteLine($"✅ SMTP_PORT: {_emailSettings.SmtpPort}");
+                    Console.WriteLine($"✅ SMTP_EMAIL: {_emailSettings.SenderEmail}");
+                    Console.WriteLine($"✅ SMTP_PASSWORD: {_emailSettings.SenderPassword?.Substring(0, 3)}******"); // Masked
 
-                // Create Email Message
-                var mailMessage = new MailMessage
-                {
-                    From = new MailAddress(senderEmail, senderName),
-                    Subject = subject,
-                    Body = body,
-                    IsBodyHtml = true
-                };
+                    await client.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, SecureSocketOptions.StartTls);
+                    await client.AuthenticateAsync(_emailSettings.SenderEmail, _emailSettings.SenderPassword);
+                    await client.SendAsync(message);
+                    await client.DisconnectAsync(true);
 
-                mailMessage.To.Add(recipientEmail);
-                
-                //  Send Email
-                await client.SendMailAsync(mailMessage);
-                Console.WriteLine($" Email successfully sent to {recipientEmail}");
-                return true;
+                    Console.WriteLine("✅ Email sent successfully.");
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($" Email Sending Failed: {ex.Message}");
-                return false;
+                Console.WriteLine($"❌ Email sending failed: {ex.Message}");
+                throw;
             }
         }
     }
