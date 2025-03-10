@@ -68,17 +68,17 @@ namespace JobPortalAPI.Controllers
             return BadRequest(result.Errors);
         }
         [HttpGet("get-user-roles/{userId}")]
-public async Task<IActionResult> GetUserRoles(string userId)
-{
-    var user = await _userManager.FindByIdAsync(userId);
-    if (user == null)
-    {
-        return NotFound("User not found.");
-    }
+        public async Task<IActionResult> GetUserRoles(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
 
-    var roles = await _userManager.GetRolesAsync(user);
-    return Ok(new { userId = user.Id, roles });
-}
+            var roles = await _userManager.GetRolesAsync(user);
+            return Ok(new { userId = user.Id, roles });
+        }
 
 
         // Update an existing role
@@ -127,38 +127,38 @@ public async Task<IActionResult> GetUserRoles(string userId)
         }
 
         // Assign a role to a user
-       [HttpPost("assign-role-to-user")]
-public async Task<IActionResult> AssignRoleToUser([FromBody] AssignRoleModel model)
-{
-    var user = await _userManager.FindByIdAsync(model.UserId);
-    if (user == null)
-    {
-        _logger.LogWarning("User not found: {UserId}", model.UserId);
-        return NotFound("User not found.");
-    }
+        [HttpPost("assign-role-to-user")]
+        public async Task<IActionResult> AssignRoleToUser([FromBody] AssignRoleModel model)
+        {
+            var user = await _userManager.FindByIdAsync(model.UserId);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found: {UserId}", model.UserId);
+                return NotFound("User not found.");
+            }
 
-    var roleExists = await _roleManager.RoleExistsAsync(model.RoleName);
-    if (!roleExists)
-    {
-        _logger.LogWarning("Role not found: {RoleName}", model.RoleName);
-        return NotFound("Role not found.");
-    }
+            var roleExists = await _roleManager.RoleExistsAsync(model.RoleName);
+            if (!roleExists)
+            {
+                _logger.LogWarning("Role not found: {RoleName}", model.RoleName);
+                return NotFound("Role not found.");
+            }
 
-    // ✅ Remove all previous roles before assigning the new role
-    var currentRoles = await _userManager.GetRolesAsync(user);
-    await _userManager.RemoveFromRolesAsync(user, currentRoles);
+            // Remove all previous roles before assigning the new role
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            await _userManager.RemoveFromRolesAsync(user, currentRoles);
 
-    // ✅ Assign the new role
-    var result = await _userManager.AddToRoleAsync(user, model.RoleName);
-    if (result.Succeeded)
-    {
-        _logger.LogInformation("Role '{RoleName}' assigned to user '{UserId}' successfully.", model.RoleName, model.UserId);
-        return Ok($"User {user.Email} is now assigned to role {model.RoleName}.");
-    }
+            // Assign the new role
+            var result = await _userManager.AddToRoleAsync(user, model.RoleName);
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("Role '{RoleName}' assigned to user '{UserId}' successfully.", model.RoleName, model.UserId);
+                return Ok($"User {user.Email} is now assigned to role {model.RoleName}.");
+            }
 
-    _logger.LogError("Error assigning role '{RoleName}' to user '{UserId}': {Errors}", model.RoleName, model.UserId, result.Errors);
-    return BadRequest(result.Errors);
-}
+            _logger.LogError("Error assigning role '{RoleName}' to user '{UserId}': {Errors}", model.RoleName, model.UserId, result.Errors);
+            return BadRequest(result.Errors);
+        }
 
     }
 }
