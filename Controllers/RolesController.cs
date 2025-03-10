@@ -133,32 +133,33 @@ namespace JobPortalAPI.Controllers
             var user = await _userManager.FindByIdAsync(model.UserId);
             if (user == null)
             {
-                _logger.LogWarning("User not found: {UserId}", model.UserId);
                 return NotFound("User not found.");
             }
 
             var roleExists = await _roleManager.RoleExistsAsync(model.RoleName);
             if (!roleExists)
             {
-                _logger.LogWarning("Role not found: {RoleName}", model.RoleName);
                 return NotFound("Role not found.");
             }
 
-            // Remove all previous roles before assigning the new role
+            // Remove existing roles before assigning a new one
             var currentRoles = await _userManager.GetRolesAsync(user);
             await _userManager.RemoveFromRolesAsync(user, currentRoles);
 
             // Assign the new role
             var result = await _userManager.AddToRoleAsync(user, model.RoleName);
-            if (result.Succeeded)
+            if (!result.Succeeded)
             {
-                _logger.LogInformation("Role '{RoleName}' assigned to user '{UserId}' successfully.", model.RoleName, model.UserId);
-                return Ok($"User {user.Email} is now assigned to role {model.RoleName}.");
+                return BadRequest(result.Errors);
             }
 
-            _logger.LogError("Error assigning role '{RoleName}' to user '{UserId}': {Errors}", model.RoleName, model.UserId, result.Errors);
-            return BadRequest(result.Errors);
+            // UPDATE THE ROLE PROPERTY IN THE DATABASE
+            user.Role = model.RoleName; // Update role field
+            await _userManager.UpdateAsync(user); // Save changes
+
+            return Ok("Role assigned successfully.");
         }
+
 
     }
 }

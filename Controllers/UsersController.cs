@@ -16,7 +16,7 @@ namespace JobPortalAPI.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
-        private readonly UserManager<User> _userManager; //Inject UserManager
+        private readonly UserManager<User> _userManager; // Inject UserManager
         private readonly ILogger<UsersController> _logger;
 
         public UsersController(IUserRepository userRepository, UserManager<User> userManager, ILogger<UsersController> logger)
@@ -27,7 +27,7 @@ namespace JobPortalAPI.Controllers
         }
 
         [HttpGet]
-        // [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")] // Only Admins can access
         public async Task<ActionResult<IEnumerable<UserDTO>>> GetUsers()
         {
             var users = await _userRepository.GetAllAsync();
@@ -35,12 +35,12 @@ namespace JobPortalAPI.Controllers
 
             foreach (var user in users)
             {
-                var roles = await _userManager.GetRolesAsync(user); //  Fetch roles
+                var roles = await _userManager.GetRolesAsync(user); // Fetch correct roles from Identity
                 userDTOs.Add(new UserDTO
                 {
                     Id = user.Id,
                     FullName = user.FullName,
-                    Role = roles.Any() ? string.Join(", ", roles) : "No Role", // Include roles
+                    Role = roles.Any() ? string.Join(", ", roles) : "No Role", // Get actual assigned roles
                     Email = user.Email ?? ""
                 });
             }
@@ -55,7 +55,7 @@ namespace JobPortalAPI.Controllers
             if (user == null)
                 return NotFound();
 
-            var roles = await _userManager.GetRolesAsync(user); // Fetch roles
+            var roles = await _userManager.GetRolesAsync(user); // Fetch roles dynamically
             var userDTO = new UserDTO
             {
                 Id = user.Id,

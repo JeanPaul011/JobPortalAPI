@@ -56,9 +56,7 @@ builder.Services.AddIdentity<User, IdentityRole>()
     .AddDefaultTokenProviders();
 
 // Register Identity Managers
-builder.Services.AddScoped<UserManager<User>>();
-builder.Services.AddScoped<SignInManager<User>>();
-builder.Services.AddScoped<RoleManager<IdentityRole>>();
+
 
 // Register Authentication using JWT
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new Exception("JWT Key is missing!");
@@ -84,7 +82,7 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
     options.AddPolicy("RequireRecruiterRole", policy => policy.RequireRole("Recruiter"));
-    options.AddPolicy("RequireUserRole", policy => policy.RequireRole("User")); // ✅ Fixed: Matching "User" role
+    options.AddPolicy("RequireUserRole", policy => policy.RequireRole("User")); // Fixed: Matching "User" role
 });
 
 // Register Mail Service using MailKit
@@ -98,10 +96,7 @@ builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IJobApplicationService, JobApplicationService>();
 
-// Register User Manager and Role Manager to ensure they are injected correctly
-builder.Services.AddScoped<UserManager<User>>();
-builder.Services.AddScoped<SignInManager<User>>();
-builder.Services.AddScoped<RoleManager<IdentityRole>>();
+
 
 // Register Repositories
 builder.Services.AddScoped<IJobRepository, JobRepository>();
@@ -179,14 +174,14 @@ Console.WriteLine($" JWT Key: {(string.IsNullOrEmpty(jwtKey) ? " MISSING" : " OK
 Console.WriteLine($" JWT Issuer: {jwtIssuer}");
 Console.WriteLine($" JWT Expiry: {builder.Configuration["Jwt:ExpireHours"]}");
 
-// ✅ Ensure Roles Exist Before Running the App
+//  Ensure Roles Exist Before Running the App
 using (var scope = app.Services.CreateScope())
 {
     var serviceProvider = scope.ServiceProvider;
     var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
 
-    var roles = new[] { "Admin", "Recruiter", "User" }; // ✅ Fixed: "JobSeeker" -> "User"
+    var roles = new[] { "Admin", "Recruiter", "User" }; //  Fixed: "JobSeeker" -> "User"
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))

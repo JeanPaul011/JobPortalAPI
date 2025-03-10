@@ -6,8 +6,8 @@ namespace JobPortalAPI.Services
 {
     public interface IUserService
     {
-        Task<IEnumerable<UserDTO>> GetAllUsersAsync();
-        Task<UserDTO?> GetUserByIdAsync(string id);
-        Task<bool> UpdateUserRoleAsync(string id, string newRole);  
+        Task<IEnumerable<UserDTO>> GetAllUsersAsync(); // Fetch all users with roles
+        Task<UserDTO?> GetUserByIdAsync(string id); //  Get single user with role
+        Task<bool> UpdateUserRoleAsync(string id, string newRole);  // Update role properly
     }
 }

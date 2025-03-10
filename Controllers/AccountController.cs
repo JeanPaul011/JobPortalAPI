@@ -43,7 +43,8 @@ namespace JobPortalAPI.Controllers
             {
                 UserName = model.Email,
                 Email = model.Email,
-                FullName = model.FullName ?? "New User"
+                FullName = model.FullName ?? "New User",
+                Role = "User"
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
@@ -75,10 +76,10 @@ namespace JobPortalAPI.Controllers
 
             var result = await _userManager.ConfirmEmailAsync(user, token);
             if (result.Succeeded) return Ok("Email verification successful.");
-            
+
             return BadRequest("Email verification failed.");
         }
-         [HttpPost("login")]
+        [HttpPost("login")]
         public async Task<IActionResult> Login(LoginUserDTO model)
         {
             var user = await _userManager.FindByEmailAsync(model.Email);
@@ -115,6 +116,26 @@ namespace JobPortalAPI.Controllers
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Unauthorized("User not found.");
+            }
+
+            // Remove refresh token if used
+            user.RefreshToken = null;
+            user.RefreshTokenExpiry = null;
+            await _userManager.UpdateAsync(user);
+
+            // ✅ Sign out user from Identity
+            await _signInManager.SignOutAsync();
+
+            return Ok(new { message = "Logged out successfully." });
         }
     }
 }

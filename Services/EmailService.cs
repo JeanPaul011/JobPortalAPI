@@ -15,7 +15,7 @@ namespace JobPortalAPI.Services
         {
             _emailSettings = emailSettings.Value;
 
-            // ✅ Ensure `.env` variables override `appsettings.json`
+            // Ensure `.env` variables override `appsettings.json`
             _emailSettings.SmtpServer = Environment.GetEnvironmentVariable("SMTP_SERVER") ?? _emailSettings.SmtpServer;
             _emailSettings.SmtpPort = int.TryParse(Environment.GetEnvironmentVariable("SMTP_PORT"), out int port) ? port : _emailSettings.SmtpPort;
             _emailSettings.SenderEmail = Environment.GetEnvironmentVariable("SMTP_EMAIL") ?? _emailSettings.SenderEmail;
@@ -35,24 +35,19 @@ namespace JobPortalAPI.Services
 
                 using (var client = new SmtpClient())
                 {
-                    // ✅ Print Debugging Information
-                    Console.WriteLine("🚀 DEBUG: Checking EmailService Configuration...");
-                    Console.WriteLine($"✅ SMTP_SERVER: {_emailSettings.SmtpServer}");
-                    Console.WriteLine($"✅ SMTP_PORT: {_emailSettings.SmtpPort}");
-                    Console.WriteLine($"✅ SMTP_EMAIL: {_emailSettings.SenderEmail}");
-                    Console.WriteLine($"✅ SMTP_PASSWORD: {_emailSettings.SenderPassword?.Substring(0, 3)}******"); // Masked
+                    
 
                     await client.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, SecureSocketOptions.StartTls);
                     await client.AuthenticateAsync(_emailSettings.SenderEmail, _emailSettings.SenderPassword);
                     await client.SendAsync(message);
                     await client.DisconnectAsync(true);
 
-                    Console.WriteLine("✅ Email sent successfully.");
+                    Console.WriteLine("Email sent successfully.");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Email sending failed: {ex.Message}");
+                Console.WriteLine($" Email sending failed: {ex.Message}");
                 throw;
             }
         }

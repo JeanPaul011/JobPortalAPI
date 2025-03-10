@@ -21,7 +21,7 @@ namespace JobPortalAPI.Models
             // Ensure Identity relationships are properly configured
             modelBuilder.Entity<User>()
                 .HasMany(u => u.Applications)
-                .WithOne(ja => ja.JobSeeker)  // ✅ Use 'JobSeeker' (not 'User')
+                .WithOne(ja => ja.JobSeeker)  // Use 'JobSeeker' (not 'User')
                 .HasForeignKey(ja => ja.JobSeekerId)
                 .OnDelete(DeleteBehavior.Cascade);
 

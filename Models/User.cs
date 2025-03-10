@@ -6,7 +6,8 @@ namespace JobPortalAPI.Models
     public class User : IdentityUser
     {
         public string FullName { get; set; } = string.Empty;
-        public string Role { get; set; } = "JobSeeker";
+        public string Role { get; set; } = "User";
+        
 
         // Add Refresh Token Support
         public string? RefreshToken { get; set; }  // Stores Refresh Token
