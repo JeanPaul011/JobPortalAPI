@@ -1,5 +1,4 @@
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\JobPortalAPI.exe
-C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\appsettings.Development.json
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\appsettings.json
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\appsettings.Production.json
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\JobPortalAPI.dll
@@ -8,9 +7,10 @@ C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\JobPortalAPI.pdb
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\AspNetCoreRateLimit.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Azure.Core.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Azure.Identity.dll
-C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Castle.Core.dll
+C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\BouncyCastle.Cryptography.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\DotNetEnv.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Humanizer.dll
+C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\MailKit.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.AspNetCore.OpenApi.dll
@@ -39,6 +39,7 @@ C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.EntityFramework
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.EntityFrameworkCore.Sqlite.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.EntityFrameworkCore.SqlServer.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.Extensions.DependencyModel.dll
+C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.Identity.Client.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.Identity.Client.Extensions.Msal.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.IdentityModel.Abstractions.dll
@@ -58,8 +59,8 @@ C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.VisualStudio.We
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.VisualStudio.Web.CodeGeneration.Utils.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.VisualStudio.Web.CodeGenerators.Mvc.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.Win32.SystemEvents.dll
+C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\MimeKit.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Mono.TextTemplating.dll
-C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Moq.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Newtonsoft.Json.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\NuGet.Common.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\NuGet.Configuration.dll
@@ -89,13 +90,10 @@ C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\System.IdentityModel.Toke
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\System.Memory.Data.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\System.Reflection.MetadataLoadContext.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\System.Runtime.Caching.dll
+C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\System.Security.Cryptography.Pkcs.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\System.Security.Cryptography.ProtectedData.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\System.Security.Permissions.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\System.Windows.Extensions.dll
-C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\xunit.abstractions.dll
-C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\xunit.assert.dll
-C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\xunit.core.dll
-C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\xunit.execution.dotnet.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\af\Humanizer.resources.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\ar\Humanizer.resources.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\az\Humanizer.resources.dll
@@ -264,6 +262,8 @@ C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\runtimes\win-x64\native\e
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\runtimes\win-x86\native\e_sqlite3.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\runtimes\win\lib\net7.0\System.Drawing.Common.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\runtimes\win\lib\net6.0\System.Runtime.Caching.dll
+C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\runtimes\win\lib\net7.0\System.Security.Cryptography.ProtectedData.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\runtimes\win\lib\net7.0\System.Windows.Extensions.dll
+C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\JobPortalAPI.xml
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\JobPortalAPI.deps.json

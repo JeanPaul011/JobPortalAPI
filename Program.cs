@@ -14,6 +14,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Threading.Tasks;
+using JobPortalAPI.Middleware;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 // Load environment variables from .env file
 Env.Load();
@@ -121,6 +123,7 @@ builder.Services.AddSwaggerGen(c =>
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
         Description = "Enter 'Bearer' [space] and then your valid token."
+        
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -137,6 +140,10 @@ builder.Services.AddSwaggerGen(c =>
             new string[] {}
         }
     });
+    // Add this XML documentation code right here
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
 });
 
 // Rate Limiting Configuration
@@ -166,19 +173,24 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
-
+// Add health checks - place this before "var app = builder.Build();"
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<JobPortalContext>("database");
 // Build & Configure Application Pipeline
 var app = builder.Build();
 
 app.UseHttpsRedirection();
 app.UseIpRateLimiting();
 app.UseCors("AllowAllOrigins");
+app.UseGlobalExceptionMiddleware();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.MapControllers();
+// Add this after app.MapControllers() but before app.Run()
+app.MapHealthChecks("/health");
 
 // Ensure Roles Exist Without Blocking Startup
 // Ensure Roles Exist Without Blocking Startup
