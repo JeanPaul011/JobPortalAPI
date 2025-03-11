@@ -1,4 +1,3 @@
-C:\Users\jeanp\JobPortalAPI\bin\Debug\net8.0\appsettings.Development.json
 C:\Users\jeanp\JobPortalAPI\bin\Debug\net8.0\appsettings.json
 C:\Users\jeanp\JobPortalAPI\bin\Debug\net8.0\appsettings.Production.json
 C:\Users\jeanp\JobPortalAPI\bin\Debug\net8.0\JobPortalAPI.exe

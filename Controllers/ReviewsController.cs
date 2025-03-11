@@ -21,13 +21,17 @@ namespace JobPortalAPI.Controllers
             _logger = logger;
         }
 
+        // Everyone can view reviews
         [HttpGet]
+        
         public async Task<ActionResult<IEnumerable<Review>>> GetReviews()
         {
             return Ok(await _reviewRepository.GetAllAsync());
         }
 
+        // Everyone can view a specific review
         [HttpGet("{id}")]
+        
         public async Task<ActionResult<Review>> GetReview(int id)
         {
             var review = await _reviewRepository.GetByIdAsync(id);
@@ -37,16 +41,18 @@ namespace JobPortalAPI.Controllers
             return Ok(review);
         }
 
+        // Only JobSeekers can post reviews
         [HttpPost]
-        //[Authorize(Roles = "JobSeeker")]
+        [Authorize(Roles = "JobSeeker")]
         public async Task<ActionResult<Review>> CreateReview(Review review)
         {
             await _reviewRepository.AddAsync(review);
             return CreatedAtAction(nameof(GetReview), new { id = review.Id }, review);
         }
 
+        // Only Admins can delete reviews
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteReview(int id)
         {
             var exists = await _reviewRepository.ExistsAsync(r => r.Id == id);
@@ -58,4 +64,3 @@ namespace JobPortalAPI.Controllers
         }
     }
 }
-

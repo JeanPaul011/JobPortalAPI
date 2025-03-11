@@ -27,12 +27,10 @@ builder.Configuration
     .AddJsonFile("appsettings.Production.json", optional: true, reloadOnChange: true) 
     .AddEnvironmentVariables(); // Load ENV variables if available
 
-// Check if running in Production and verify environment variables
+// Verify Environment Variables in Production
 if (builder.Environment.IsProduction())
 {
     Console.WriteLine("Running in Production Mode...");
-
-    // Ensure required environment variables are set
     if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SMTP_EMAIL")) ||
         string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SMTP_PASSWORD")) ||
         string.IsNullOrEmpty(Environment.GetEnvironmentVariable("JWT_SECRET")))
@@ -45,21 +43,26 @@ else
     Console.WriteLine("Running in Development Mode...");
 }
 
-// Register Database Context
+// Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("Connection") ?? throw new Exception("Database connection is missing!");
 builder.Services.AddDbContext<JobPortalContext>(options =>
     options.UseSqlite(connectionString), ServiceLifetime.Scoped);
 
-// Register Identity & Authentication with the correct User model
+// Identity & Authentication Configuration
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<JobPortalContext>()
     .AddDefaultTokenProviders();
 
 // Register Identity Managers
+builder.Services.AddScoped<UserManager<User>>();
+builder.Services.AddScoped<SignInManager<User>>();
+builder.Services.AddScoped<RoleManager<IdentityRole>>();
 
-
-// Register Authentication using JWT
+// Load JWT Secret Key Securely
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new Exception("JWT Key is missing!");
+Console.WriteLine($"Debugging JWT Key: {jwtKey.Substring(0, 5)}******"); // Masked for security
+
+// Configure Authentication using JWT
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "https://localhost:5276";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -73,30 +76,29 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtIssuer,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            RoleClaimType = "role"
+            RoleClaimType = ClaimTypes.Role
         };
     });
 
-// Register Authorization Policies
+// Configure Authorization Policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
     options.AddPolicy("RequireRecruiterRole", policy => policy.RequireRole("Recruiter"));
-    options.AddPolicy("RequireUserRole", policy => policy.RequireRole("User")); // Fixed: Matching "User" role
+    options.AddPolicy("RequireJobSeekerRole", policy => policy.RequireRole("JobSeeker"));
+    options.AddPolicy("RequireAdminOrRecruiter", policy => policy.RequireRole("Admin", "Recruiter"));
+    options.AddPolicy("RequireAdminOrJobSeeker", policy => policy.RequireRole("Admin", "JobSeeker"));
 });
 
-// Register Mail Service using MailKit
+
+// Application Services & Dependency Injection
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<EmailService>();
-
-// Register Application Services
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IJobApplicationService, JobApplicationService>();
-
-
 
 // Register Repositories
 builder.Services.AddScoped<IJobRepository, JobRepository>();
@@ -106,7 +108,7 @@ builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IJobApplicationRepository, JobApplicationRepository>();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
-// Register Controllers
+// Swagger Configuration
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -137,7 +139,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Register Rate Limiting Services
+// Rate Limiting Configuration
 builder.Services.AddMemoryCache();
 builder.Services.Configure<IpRateLimitOptions>(options =>
 {
@@ -154,7 +156,7 @@ builder.Services.Configure<IpRateLimitOptions>(options =>
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 builder.Services.AddInMemoryRateLimiting();
 
-// Register CORS Policy
+// CORS Configuration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllOrigins", policy =>
@@ -165,49 +167,9 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Build & Configure Application Pipeline
 var app = builder.Build();
 
-// Debugging - Print Environment Variables
-Console.WriteLine(" Checking Environment Variables:");
-Console.WriteLine($" ConnectionString: {connectionString}");
-Console.WriteLine($" JWT Key: {(string.IsNullOrEmpty(jwtKey) ? " MISSING" : " OK")}");
-Console.WriteLine($" JWT Issuer: {jwtIssuer}");
-Console.WriteLine($" JWT Expiry: {builder.Configuration["Jwt:ExpireHours"]}");
-
-//  Ensure Roles Exist Before Running the App
-using (var scope = app.Services.CreateScope())
-{
-    var serviceProvider = scope.ServiceProvider;
-    var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
-
-    var roles = new[] { "Admin", "Recruiter", "User" }; //  Fixed: "JobSeeker" -> "User"
-    foreach (var role in roles)
-    {
-        if (!await roleManager.RoleExistsAsync(role))
-        {
-            var result = await roleManager.CreateAsync(new IdentityRole(role));
-            if (result.Succeeded)
-            {
-                Console.WriteLine($" Created role: {role}");
-            }
-            else
-            {
-                Console.WriteLine($" Failed to create role: {role}");
-            }
-        }
-    }
-}
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var emailService = services.GetRequiredService<EmailService>();
-
-    Console.WriteLine("📩 Testing EmailService Instantiation...");
-    await emailService.SendEmailAsync("test@example.com", "Test Email", "This is a test email.");
-}
-
-// Enable Middleware (Ensuring Proper Order)
 app.UseHttpsRedirection();
 app.UseIpRateLimiting();
 app.UseCors("AllowAllOrigins");
@@ -217,4 +179,40 @@ app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.MapControllers();
+
+// Ensure Roles Exist Without Blocking Startup
+// Ensure Roles Exist Without Blocking Startup
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    // Create a new scope inside the event handler
+    using (var scope = app.Services.CreateScope())
+    {
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var roles = new[] { "Admin", "Recruiter", "User" };
+
+        foreach (var role in roles)
+        {
+            if (!roleManager.RoleExistsAsync(role).Result)
+            {
+                var result = roleManager.CreateAsync(new IdentityRole(role)).Result;
+                Console.WriteLine(result.Succeeded ? $"Created role: {role}" : $"Failed to create role: {role}");
+            }
+        }
+    }
+});
+
+// Prevent Sending Email Spam in Production
+if (!builder.Environment.IsProduction())
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        var emailService = services.GetRequiredService<EmailService>();
+
+        Console.WriteLine("Testing EmailService Instantiation...");
+        await emailService.SendEmailAsync("your-email@example.com", "Test Email", "This is a test email.");
+    }
+}
+
+// Run the Application
 app.Run();

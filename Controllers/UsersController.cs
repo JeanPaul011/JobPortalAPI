@@ -49,6 +49,7 @@ namespace JobPortalAPI.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin")] // Only Admins can access
         public async Task<ActionResult<UserDTO>> GetUser(string id)
         {
             var user = await _userRepository.GetByIdAsync(id);

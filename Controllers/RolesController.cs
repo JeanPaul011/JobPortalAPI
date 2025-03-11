@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Authorization;
 using JobPortalAPI.Models;
 using Microsoft.Extensions.Logging;
+using JobPortalAPI.Models.Roles;
+
 
 namespace JobPortalAPI.Controllers
 {

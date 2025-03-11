@@ -132,7 +132,7 @@ namespace JobPortalAPI.Controllers
             user.RefreshTokenExpiry = null;
             await _userManager.UpdateAsync(user);
 
-            // ✅ Sign out user from Identity
+            //  Sign out user from Identity
             await _signInManager.SignOutAsync();
 
             return Ok(new { message = "Logged out successfully." });
