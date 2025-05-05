@@ -291,3 +291,6 @@ C:\Users\jeanp\JobPortalAPI\obj\Release\net8.0\JobPortalAPI.xml
 C:\Users\jeanp\JobPortalAPI\obj\Release\net8.0\JobPortalAPI.pdb
 C:\Users\jeanp\JobPortalAPI\obj\Release\net8.0\JobPortalAPI.genruntimeconfig.cache
 C:\Users\jeanp\JobPortalAPI\obj\Release\net8.0\ref\JobPortalAPI.dll
+C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\JobPortalAPI.staticwebassets.runtime.json
+C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\jobportal.db
+C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\Microsoft.Extensions.Logging.AzureAppServices.dll

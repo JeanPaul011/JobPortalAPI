@@ -6,12 +6,16 @@ namespace JobPortalAPI.DTOs
     {
         [Required]
         [EmailAddress]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         [Required]
         [MinLength(6)]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
 
-        public string? FullName { get; set; }
+        [Required] // Ensure it’s required
+        public string FullName { get; set; } = string.Empty;
+
+        [Required]
+        public string Role { get; set; } // Remove the "= "User"" default value
     }
 }

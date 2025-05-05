@@ -16,11 +16,26 @@ using System;
 using System.Threading.Tasks;
 using JobPortalAPI.Middleware;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using JobPortalAPI.Services.TokenServices;
+
+
+
 
 // Load environment variables from .env file
 Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+// ===== ADD THIS BLOCK HERE =====
+// For Azure deployment
+// Database Configuration - REPLACE your existing code with this:
+var homeDirectory = Environment.GetEnvironmentVariable("HOME");
+var dbPath = homeDirectory != null 
+    ? Path.Combine(homeDirectory, "site", "wwwroot", "jobportal.db")
+    : "jobportal.db";
+
+builder.Services.AddDbContext<JobPortalContext>(options =>
+    options.UseSqlite($"Data Source={dbPath};"), ServiceLifetime.Scoped);
+
 
 // Load Configurations Securely
 builder.Configuration
@@ -42,7 +57,7 @@ if (builder.Environment.IsProduction())
 }
 else
 {
-    Console.WriteLine("Running in Development Mode...");
+    
 }
 
 // Database Configuration
@@ -62,10 +77,10 @@ builder.Services.AddScoped<RoleManager<IdentityRole>>();
 
 // Load JWT Secret Key Securely
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new Exception("JWT Key is missing!");
-Console.WriteLine($"Debugging JWT Key: {jwtKey.Substring(0, 5)}******"); // Masked for security
+
 
 // Configure Authentication using JWT
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "https://localhost:5276";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new Exception("JWT Issuer is missing!");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -78,8 +93,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtIssuer,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            RoleClaimType = ClaimTypes.Role
+            RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+    
         };
+        options.MapInboundClaims = false;
+        options.IncludeErrorDetails = true;
+        options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = context =>
+        {
+            // Transform array claims to single values if needed
+            var roleClaims = context.Principal.FindAll("http://schemas.microsoft.com/ws/2008/06/identity/claims/role").ToList();
+            if (roleClaims.Count > 1)
+            {
+                var identity = (ClaimsIdentity)context.Principal.Identity;
+                identity.RemoveClaim(identity.FindFirst("http://schemas.microsoft.com/ws/2008/06/identity/claims/role"));
+                identity.AddClaim(new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", "Recruiter"));
+            }
+            return Task.CompletedTask;
+        }
+    };
     });
 
 // Configure Authorization Policies
@@ -101,6 +134,8 @@ builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IJobApplicationService, JobApplicationService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+
 
 // Register Repositories
 builder.Services.AddScoped<IJobRepository, JobRepository>();
@@ -109,6 +144,8 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IJobApplicationRepository, JobApplicationRepository>();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IAdminRequestRepository, AdminRequestRepository>();
+
 
 // Swagger Configuration
 builder.Services.AddControllers();
@@ -166,24 +203,50 @@ builder.Services.AddInMemoryRateLimiting();
 // CORS Configuration
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAllOrigins", policy =>
+    options.AddPolicy("ReactApp", policy => 
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:5173", "https://localhost:5173", "http://localhost:5174", // ✅ ADD THIS
+        "https://localhost:5174")
+              .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowCredentials()
+              .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
     });
 });
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Events.OnRedirectToLogin = context =>
+    {
+        context.Response.StatusCode = 401;
+        return Task.CompletedTask;
+    };
+});
+
 // Add health checks - place this before "var app = builder.Build();"
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<JobPortalContext>("database");
 // Build & Configure Application Pipeline
 var app = builder.Build();
+// ===== ADD THIS BLOCK HERE =====
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else 
+{
+    app.UseExceptionHandler("/error");
+    // Remove the AddAzureWebAppDiagnostics line from here
+}
 
+// Add this INSTEAD at the TOP of your services configuration (around line ~15)
+builder.Logging.AddAzureWebAppDiagnostics();
+// ===== END OF ADDED BLOCK =====
 app.UseHttpsRedirection();
 app.UseIpRateLimiting();
-app.UseCors("AllowAllOrigins");
-app.UseGlobalExceptionMiddleware();
 app.UseRouting();
+app.UseCors("ReactApp");
+app.UseGlobalExceptionMiddleware();
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSwagger();
@@ -200,7 +263,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
     using (var scope = app.Services.CreateScope())
     {
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-        var roles = new[] { "Admin", "Recruiter", "User" };
+        var roles = new[] { "Admin", "Recruiter", "User", "Jobseeker" };
 
         foreach (var role in roles)
         {
@@ -214,17 +277,41 @@ app.Lifetime.ApplicationStarted.Register(() =>
 });
 
 // Prevent Sending Email Spam in Production
-if (!builder.Environment.IsProduction())
+if (builder.Environment.IsDevelopment())
 {
     using (var scope = app.Services.CreateScope())
     {
         var services = scope.ServiceProvider;
         var emailService = services.GetRequiredService<EmailService>();
 
-        Console.WriteLine("Testing EmailService Instantiation...");
         await emailService.SendEmailAsync("your-email@example.com", "Test Email", "This is a test email.");
     }
 }
-
+// ===== ADD THIS BLOCK HERE =====
+// Initialize database
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<JobPortalContext>();
+    db.Database.EnsureCreated(); // For SQLite (simple creation)
+    // OR for migrations:
+    // db.Database.Migrate();
+}
+// ===== END OF ADDED BLOCK =====
+// In your Program.cs, update the database initialization:
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<JobPortalContext>();
+    db.Database.Migrate(); // Use this instead of EnsureCreated()
+    
+    // Seed roles if they don't exist
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    foreach (var role in new[] { "Admin", "Recruiter", "JobSeeker" })
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
+        }
+    }
+}
 // Run the Application
 app.Run();

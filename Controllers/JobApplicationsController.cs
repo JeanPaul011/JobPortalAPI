@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
+using JobPortalAPI.DTOs;
 
 namespace JobPortalAPI.Controllers
 {
@@ -48,47 +49,36 @@ namespace JobPortalAPI.Controllers
         }
 
         // Only JobSeekers can apply for jobs
-        [HttpPost]
-        [Authorize(Roles = "JobSeeker")]
-        public async Task<ActionResult<JobApplication>> ApplyForJob(JobApplication jobApplication)
-        {
-            await _jobApplicationRepository.AddAsync(jobApplication);
-            return CreatedAtAction(nameof(GetJobApplications), new { id = jobApplication.Id }, jobApplication);
-        }
-        // PUT: api/jobapplications/{id}/status
-        [HttpPut("{id}/status")]
-        [Authorize(Roles = "Admin,Recruiter")]
-        public async Task<IActionResult> UpdateApplicationStatus(int id, [FromBody] string status)
-        {
-            _logger.LogInformation($"Updating status for job application with ID {id}");
+        // Only JobSeekers can apply for jobs
+[HttpPost]
+[Authorize(Roles = "JobSeeker")]
+public async Task<ActionResult<JobApplication>> ApplyForJob([FromBody] JobApplicationCreateDTO dto)
+{
+    var jobExists = await _jobApplicationRepository.JobExistsAsync(dto.JobId);
+    if (!jobExists)
+        return NotFound($"Job with ID {dto.JobId} does not exist.");
 
-            var application = await _jobApplicationRepository.GetByIdAsync(id);
-            if (application == null)
-            {
-                _logger.LogWarning($"Job application with ID {id} not found");
-                return NotFound();
-            }
+    var jobSeekerId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(jobSeekerId))
+        return Unauthorized("Job seeker identity could not be verified.");
 
-            try
-            {
-                // Validate status
-                if (!new[] { "Pending", "Reviewing", "Accepted", "Rejected", "Withdrawn" }.Contains(status))
-                {
-                    _logger.LogWarning($"Invalid status value: {status}");
-                    return BadRequest("Invalid application status. Valid values are: Pending, Reviewing, Accepted, Rejected, Withdrawn");
-                }
+    var alreadyApplied = await _jobApplicationRepository.HasAppliedAsync(dto.JobId, jobSeekerId);
+    if (alreadyApplied)
+        return Conflict("You have already applied to this job.");
 
-                application.Status = status;
-                await _jobApplicationRepository.UpdateAsync(application);
-                _logger.LogInformation($"Job application with ID {id} status updated to {status}");
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error updating status for job application with ID {id}");
-                return StatusCode(500, "An error occurred while updating the application status");
-            }
-        }
+    var application = new JobApplication
+    {
+        JobId = dto.JobId,
+        JobSeekerId = jobSeekerId,
+        Message = dto.Message,
+        Status = "Pending",
+        AppliedOn = DateTime.UtcNow
+    };
+
+    await _jobApplicationRepository.AddAsync(application);
+    return CreatedAtAction(nameof(GetJobApplications), new { id = application.Id }, application);
+}
+
 
         // Only Admins & Recruiters can delete job applications
         [HttpDelete("{id}")]

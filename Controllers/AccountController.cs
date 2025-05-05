@@ -1,16 +1,14 @@
+using JobPortalAPI.Models;
+using JobPortalAPI.Models.Roles;
+using JobPortalAPI.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
+using JobPortalAPI.DTOs;
+using JobPortalAPI.Services.TokenServices;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
-using System;
-using System.Threading.Tasks;
-using JobPortalAPI.DTOs;
-using JobPortalAPI.Models;
-using JobPortalAPI.Services;
-
+using Microsoft.IdentityModel.Tokens;
 
 namespace JobPortalAPI.Controllers
 {
@@ -20,123 +18,186 @@ namespace JobPortalAPI.Controllers
     {
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
-        private readonly EmailService _emailService;
-        private readonly IConfiguration _configuration;
+        private readonly ITokenService _tokenService;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public AccountController(UserManager<User> userManager,
-                                 SignInManager<User> signInManager,
-                                 EmailService emailService,
-                                 IConfiguration configuration)
+        public AccountController(
+            UserManager<User> userManager,
+            SignInManager<User> signInManager,
+            ITokenService tokenService,
+            RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
             _signInManager = signInManager;
-            _emailService = emailService;
-            _configuration = configuration;
+            _tokenService = tokenService;
+            _roleManager = roleManager;
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterUserDTO model)
+        public async Task<IActionResult> Register([FromBody] RegisterUserDTO model)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
             var user = new User
             {
                 UserName = model.Email,
                 Email = model.Email,
-                FullName = model.FullName ?? "New User",
-                Role = "User"
+                FullName = model.FullName,
+                Role = model.Role
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (result.Succeeded)
             {
-                // Assign default role
-                await _userManager.AddToRoleAsync(user, "User");
+                var roleResult = await _userManager.AddToRoleAsync(user, model.Role);
 
-                // Generate email verification token
-                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                var verificationLink = Url.Action("VerifyEmail", "Account", new { userId = user.Id, token }, Request.Scheme);
-
-                // Send verification email
-                var emailSubject = "Email Verification";
-                var emailBody = $"Please verify your email by clicking the following link: {verificationLink}";
-                await _emailService.SendEmailAsync(user.Email!, emailSubject, emailBody);
-
-                return Ok("User registered successfully. A verification email has been sent.");
+                if (roleResult.Succeeded)
+                {
+                    return Ok(new { message = "User registered successfully" });
+                }
+                else
+                {
+                    foreach (var error in roleResult.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    }
+                    await _userManager.DeleteAsync(user);
+                    return BadRequest(ModelState);
+                }
             }
-            return BadRequest(result.Errors);
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            return BadRequest(ModelState);
         }
 
-        [HttpGet("verify-email")]
-        public async Task<IActionResult> VerifyEmail(string userId, string token)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null) return NotFound("User not found.");
-
-            var result = await _userManager.ConfirmEmailAsync(user, token);
-            if (result.Succeeded) return Ok("Email verification successful.");
-
-            return BadRequest("Email verification failed.");
-        }
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginUserDTO model)
+        public async Task<IActionResult> Login([FromBody] LoginUserDTO model)
         {
             var user = await _userManager.FindByEmailAsync(model.Email);
-            if (user == null) return Unauthorized("Invalid credentials.");
-
-            if (!await _userManager.IsEmailConfirmedAsync(user))
-                return Unauthorized("Please verify your email before logging in.");
+            if (user == null)
+                return Unauthorized("Invalid email or password");
 
             var result = await _signInManager.PasswordSignInAsync(user, model.Password, false, false);
-            if (!result.Succeeded) return Unauthorized("Invalid login attempt.");
 
-            var token = GenerateJwtToken(user);
-            return Ok(new { Token = token });
-        }
+            if (!result.Succeeded)
+                return Unauthorized("Invalid login attempt");
+                
 
-        private string GenerateJwtToken(User user)
-        {
-            var claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
+            var accessToken = _tokenService.GenerateToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expires = DateTime.UtcNow.AddHours(Convert.ToDouble(_configuration["Jwt:ExpireHours"]));
-
-            var token = new JwtSecurityToken(
-                _configuration["Jwt:Issuer"],
-                _configuration["Jwt:Issuer"],
-                claims,
-                expires: expires,
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-        [HttpPost("logout")]
-        public async Task<IActionResult> Logout()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Unauthorized("User not found.");
-            }
-
-            // Remove refresh token if used
-            user.RefreshToken = null;
-            user.RefreshTokenExpiry = null;
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
             await _userManager.UpdateAsync(user);
 
-            //  Sign out user from Identity
-            await _signInManager.SignOutAsync();
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.FirstOrDefault();
 
-            return Ok(new { message = "Logged out successfully." });
+            return Ok(new
+            {
+                token = accessToken,
+                refreshToken,
+                user.Email,
+                user.FullName,
+                role
+            });
+        }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            if (string.IsNullOrEmpty(request.AccessToken) || string.IsNullOrEmpty(request.RefreshToken))
+                return BadRequest("Both tokens are required");
+
+            try
+            {
+                var principal = _tokenService.GetPrincipalFromExpiredToken(request.AccessToken);
+                var userId = principal.FindFirst("userId")?.Value;
+
+                if (userId == null)
+                    return BadRequest("Invalid token");
+
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || user.RefreshToken != request.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+                    return BadRequest("Invalid refresh token");
+
+                var newAccessToken = _tokenService.GenerateToken(user);
+                var newRefreshToken = _tokenService.GenerateRefreshToken();
+
+                user.RefreshToken = newRefreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                await _userManager.UpdateAsync(user);
+
+                var roles = await _userManager.GetRolesAsync(user);
+                var role = roles.FirstOrDefault();
+
+                return Ok(new
+                {
+                    token = newAccessToken,
+                    refreshToken = newRefreshToken,
+                    user.Email,
+                    user.FullName,
+                    role
+                });
+            }
+            catch (SecurityTokenException ex)
+            {
+                return BadRequest($"Token validation failed: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [HttpPost("revoke-token")]
+        [Authorize]
+        public async Task<IActionResult> RevokeToken()
+        {
+            var userId = User.FindFirst("userId")?.Value;
+            if (userId == null)
+                return BadRequest("Invalid user");
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return BadRequest("User not found");
+
+            user.RefreshToken = null;
+            await _userManager.UpdateAsync(user);
+
+            return Ok(new { message = "Token revoked successfully" });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("promote-to-admin")]
+        public async Task<IActionResult> PromoteToAdmin([FromBody] AssignRoleModel model)
+        {
+            var user = await _userManager.FindByIdAsync(model.UserId);
+            if (user == null)
+                return NotFound("User not found.");
+
+            user.Role = "Admin";
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
+            await _userManager.AddToRoleAsync(user, "Admin");
+
+            return Ok(new { message = "User promoted to Admin successfully!" });
         }
     }
-}
 
+    public class RefreshTokenRequest
+    {
+        public string AccessToken { get; set; }
+        public string RefreshToken { get; set; }
+    }
+}

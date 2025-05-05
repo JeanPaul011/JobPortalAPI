@@ -13,6 +13,9 @@ namespace JobPortalAPI.Models
         public DbSet<JobApplication> JobApplications { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Review> Reviews { get; set; }
+        public DbSet<AdminRequest> AdminRequests { get; set; }
+        public DbSet<SavedJob> SavedJobs { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

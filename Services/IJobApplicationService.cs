@@ -1,4 +1,4 @@
-using JobPortalAPI.DTOs;
+ using JobPortalAPI.DTOs;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -12,4 +12,4 @@ namespace JobPortalAPI.Services
         Task UpdateJobApplicationStatusAsync(int id, string status);
         Task DeleteJobApplicationAsync(int id);
     }
-}
+} 

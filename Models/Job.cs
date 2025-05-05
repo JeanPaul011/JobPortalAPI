@@ -7,6 +7,7 @@ namespace JobPortalAPI.Models
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Location { get; set; } = string.Empty;
+        public string Description { get; set; }
         public string JobType { get; set; } = "Full-Time";
         public decimal Salary { get; set; }
         public DateTime PostedOn { get; set; } = DateTime.UtcNow;

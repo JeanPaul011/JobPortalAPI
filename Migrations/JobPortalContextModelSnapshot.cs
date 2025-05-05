@@ -32,6 +32,28 @@ namespace JobPortalAPI.Migrations
                     b.ToTable("CompanyRecruiters", (string)null);
                 });
 
+            modelBuilder.Entity("JobPortalAPI.Models.AdminRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("RequestedOn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AdminRequests");
+                });
+
             modelBuilder.Entity("JobPortalAPI.Models.Company", b =>
                 {
                     b.Property<int>("Id")
@@ -63,6 +85,10 @@ namespace JobPortalAPI.Migrations
 
                     b.Property<int>("CompanyId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("JobType")
                         .IsRequired()
@@ -111,6 +137,9 @@ namespace JobPortalAPI.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Message")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -156,6 +185,24 @@ namespace JobPortalAPI.Migrations
                     b.ToTable("Reviews");
                 });
 
+            modelBuilder.Entity("JobPortalAPI.Models.SavedJob", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("JobId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("JobSeekerId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SavedJobs");
+                });
+
             modelBuilder.Entity("JobPortalAPI.Models.User", b =>
                 {
                     b.Property<string>("Id")
@@ -175,9 +222,18 @@ namespace JobPortalAPI.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("EmailVerificationToken")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("EmailVerificationTokenExpiry")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsEmailVerified")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("INTEGER");
@@ -205,7 +261,7 @@ namespace JobPortalAPI.Migrations
                     b.Property<string>("RefreshToken")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("RefreshTokenExpiry")
+                    b.Property<DateTime?>("RefreshTokenExpiryTime")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Role")

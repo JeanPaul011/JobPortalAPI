@@ -24,7 +24,8 @@ namespace JobPortalAPI.Services
                     Id = ja.Id,
                     JobId = ja.JobId,
                     UserId = ja.JobSeekerId,
-                    Status = ja.Status
+                    Status = ja.Status,
+                    Message = ja.Message
                 }).ToListAsync();
         }
 
@@ -36,17 +37,20 @@ namespace JobPortalAPI.Services
                 Id = jobApplication.Id,
                 JobId = jobApplication.JobId,
                 UserId = jobApplication.JobSeekerId,
-                Status = jobApplication.Status
+                Status = jobApplication.Status,
+                Message = jobApplication.Message
             };
         }
 
-        public async Task AddJobApplicationAsync(JobApplicationDTO jobApplicationDto)
+        public async Task AddJobApplicationAsync(JobApplicationDTO dto)
         {
             var jobApplication = new JobApplication
             {
-                JobId = jobApplicationDto.JobId,
-                JobSeekerId = jobApplicationDto.UserId,
-                Status = jobApplicationDto.Status
+                JobId = dto.JobId,
+                JobSeekerId = dto.UserId,
+                Status = dto.Status,
+                Message = dto.Message,
+                AppliedOn = DateTime.UtcNow
             };
 
             _context.JobApplications.Add(jobApplication);

@@ -1,24 +1,24 @@
 # Ignore environment variable files
-#.env
-#appsettings.Production.json
+.env
+appsettings.Production.json
 
 # Ignore database files
-#*.db
-#Migrations/
+*.db
+Migrations/
 
 # Ignore build & dependency files
-#bin/
-#obj/
-#*.log
-#*.dll
-#*.pdb
-#*.exe
+bin/
+obj/
+*.log
+*.dll
+*.pdb
+*.exe
 
 # Ignore IDE/Editor files
-#.vscode/
-#*.suo
-#*.user
-#*.lock.json
+.vscode/
+*.suo
+*.user
+*.lock.json
 # Ignore appsettings (sensitive data)
-#appsettings.json
-#appsettings.Production.json
+appsettings.json
+appsettings.Production.json

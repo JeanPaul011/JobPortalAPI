@@ -6,5 +6,6 @@ namespace JobPortalAPI.DTOs
         public int JobId { get; set; }
         public string UserId { get; set; } = string.Empty;
         public string Status { get; set; } = "Pending";
+        public string? Message { get; set; }
     }
 }

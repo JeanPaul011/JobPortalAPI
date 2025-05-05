@@ -1,6 +1,7 @@
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\JobPortalAPI.exe
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\appsettings.json
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\appsettings.Production.json
+C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\jobportal.db
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\JobPortalAPI.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\JobPortalAPI.runtimeconfig.json
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\JobPortalAPI.pdb
@@ -40,6 +41,7 @@ C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.EntityFramework
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.EntityFrameworkCore.SqlServer.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.Extensions.DependencyModel.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore.dll
+C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.Extensions.Logging.AzureAppServices.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.Identity.Client.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.Identity.Client.Extensions.Msal.dll
 C:\Users\jeanp\JobPortalAPI\bin\Release\net8.0\publish\Microsoft.IdentityModel.Abstractions.dll

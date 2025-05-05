@@ -32,10 +32,12 @@ namespace JobPortalAPI.Middleware
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
-            var response = new 
+            var response = new
             {
                 StatusCode = context.Response.StatusCode,
-                Message = "An internal server error occurred. Please try again later."
+                Message = "An internal server error occurred. Please try again later.",
+                Detail = exception.Message, // <- Show actual error
+                Stack = exception.StackTrace  // <- Optional: show stack trace
             };
 
             var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -43,6 +45,7 @@ namespace JobPortalAPI.Middleware
 
             return context.Response.WriteAsync(json);
         }
+
     }
 
     public static class GlobalExceptionMiddlewareExtensions

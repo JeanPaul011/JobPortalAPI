@@ -5,6 +5,9 @@ using JobPortalAPI.Repositories;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using JobPortalAPI.DTOs;
+
+
 
 namespace JobPortalAPI.Controllers
 {
@@ -44,14 +47,54 @@ namespace JobPortalAPI.Controllers
         // Only Admins & Recruiters can create jobs
         [HttpPost]
         [Authorize(Roles = "Admin,Recruiter")]
-        public async Task<ActionResult<Job>> CreateJob([FromBody] Job job)
+        public async Task<ActionResult<Job>> CreateJob([FromBody] JobDTO jobDto)
         {
-            var companyExists = await _jobRepository.CompanyExistsAsync(job.CompanyId);
-            if (!companyExists)
-                return BadRequest("Company does not exist!");
+            Console.WriteLine($"Roles found: {string.Join(",", User.FindAll("http://schemas.microsoft.com/ws/2008/06/identity/claims/role").Select(c => c.Value))}");
+    Console.WriteLine($"IsInRole('Recruiter'): {User.IsInRole("Recruiter")}");
+            foreach (var claim in User.Claims)
+            {
+                Console.WriteLine($"{claim.Type}: {claim.Value}");
+            }
+            var isAdmin = User.IsInRole("Admin");
+            var isRecruiter = User.IsInRole("Recruiter");
+            Console.WriteLine($"IsAdmin: {isAdmin}, IsRecruiter: {isRecruiter}");
+            try
+            {
+                // Step 1: Check if the company exists
+                var company = await _jobRepository.GetCompanyByNameAsync(jobDto.CompanyName);
 
-            await _jobRepository.AddAsync(job);
-            return CreatedAtAction(nameof(GetJob), new { id = job.Id }, job);
+                if (company == null)
+                {
+                    // Step 2: If company doesn't exist, create it
+                    company = new Company
+                    {
+                        Name = jobDto.CompanyName
+                    };
+
+                    await _jobRepository.AddCompanyAsync(company);
+                }
+
+                // Step 3: Create the job
+                var job = new Job
+                {
+                    Title = jobDto.Title,
+                    Description = jobDto.Description,
+                    Salary = jobDto.Salary,
+                    JobType = jobDto.JobType,
+                    Location = jobDto.Location,
+                    CompanyId = company.Id, // ✅ This stays, because company is resolved above
+                    RecruiterId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                };
+
+                await _jobRepository.AddAsync(job);
+
+                return CreatedAtAction(nameof(GetJob), new { id = job.Id }, job);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while creating job");
+                return StatusCode(500, "An error occurred while creating the job");
+            }
         }
 
         // PUT: api/jobs/{id}
@@ -135,5 +178,39 @@ namespace JobPortalAPI.Controllers
             await _jobRepository.DeleteAsync(id);
             return NoContent();
         }
+
+        [HttpGet("recruiter/{recruiterId}")]
+        [Authorize(Roles = "Recruiter,Admin")]
+        public async Task<ActionResult<IEnumerable<Job>>> GetJobsByRecruiter(string recruiterId)
+        {
+            _logger.LogInformation($"Fetching jobs posted by recruiter {recruiterId}");
+
+            try
+            {
+                var jobs = await _jobRepository.GetJobsByRecruiterIdAsync(recruiterId);
+                return Ok(jobs);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error fetching jobs for recruiter {recruiterId}");
+                return StatusCode(500, "An error occurred while fetching recruiter jobs");
+            }
+        }
+        [HttpGet("test-auth")]
+        [Authorize]
+        public IActionResult TestAuth()
+        {
+            var response = new
+            {
+                IsAuthenticated = User.Identity.IsAuthenticated,
+                Name = User.Identity.Name,
+                Claims = User.Claims.Select(c => new { c.Type, c.Value }),
+                IsInRoleRecruiter = User.IsInRole("Recruiter"),
+                IsInRoleAdmin = User.IsInRole("Admin")
+            };
+
+            return Ok(response);
+        }
+
     }
 }

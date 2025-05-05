@@ -7,12 +7,10 @@ using JobPortalAPI.Models;
 using Microsoft.Extensions.Logging;
 using JobPortalAPI.Models.Roles;
 
-
 namespace JobPortalAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")] // Admins only
     public class RolesController : ControllerBase
     {
         private readonly RoleManager<IdentityRole> _roleManager;
@@ -26,8 +24,9 @@ namespace JobPortalAPI.Controllers
             _logger = logger;
         }
 
-        // Get all roles
+        // ✅ Public: Get all roles
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult GetRoles()
         {
             _logger.LogInformation("Fetching all roles.");
@@ -35,8 +34,9 @@ namespace JobPortalAPI.Controllers
             return Ok(roles);
         }
 
-        // Get a specific role by ID
+        // 🔒 Admin only: Get specific role
         [HttpGet("{roleId}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetRole(string roleId)
         {
             var role = await _roleManager.FindByIdAsync(roleId);
@@ -48,8 +48,9 @@ namespace JobPortalAPI.Controllers
             return Ok(role);
         }
 
-        // Create a new role
+        // 🔒 Admin only: Create role
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateRole([FromBody] string roleName)
         {
             if (await _roleManager.RoleExistsAsync(roleName))
@@ -69,7 +70,10 @@ namespace JobPortalAPI.Controllers
             _logger.LogError("Error creating role '{Role}': {Errors}", roleName, result.Errors);
             return BadRequest(result.Errors);
         }
+
+        // 🔒 Admin only: Get user roles
         [HttpGet("get-user-roles/{userId}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUserRoles(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
@@ -82,9 +86,9 @@ namespace JobPortalAPI.Controllers
             return Ok(new { userId = user.Id, roles });
         }
 
-
-        // Update an existing role
+        // 🔒 Admin only: Update role
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateRole([FromBody] UpdateRoleModel model)
         {
             var role = await _roleManager.FindByIdAsync(model.RoleId);
@@ -106,8 +110,9 @@ namespace JobPortalAPI.Controllers
             return BadRequest(result.Errors);
         }
 
-        // Delete a role
+        // 🔒 Admin only: Delete role
         [HttpDelete("{roleId}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteRole(string roleId)
         {
             var role = await _roleManager.FindByIdAsync(roleId);
@@ -128,8 +133,9 @@ namespace JobPortalAPI.Controllers
             return BadRequest(result.Errors);
         }
 
-        // Assign a role to a user
+        // 🔒 Admin only: Assign role to user
         [HttpPost("assign-role-to-user")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AssignRoleToUser([FromBody] AssignRoleModel model)
         {
             var user = await _userManager.FindByIdAsync(model.UserId);
@@ -155,13 +161,11 @@ namespace JobPortalAPI.Controllers
                 return BadRequest(result.Errors);
             }
 
-            // UPDATE THE ROLE PROPERTY IN THE DATABASE
-            user.Role = model.RoleName; // Update role field
-            await _userManager.UpdateAsync(user); // Save changes
+            // Update user role property
+            user.Role = model.RoleName;
+            await _userManager.UpdateAsync(user);
 
             return Ok("Role assigned successfully.");
         }
-
-
     }
 }

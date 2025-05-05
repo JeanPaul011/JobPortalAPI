@@ -8,7 +8,7 @@ namespace JobPortalAPI.Services
     {
         Task<IEnumerable<JobDTO>> GetAllJobsAsync();
         Task<JobDTO?> GetJobByIdAsync(int id);
-        Task AddJobAsync(JobDTO job);
+        Task AddJobAsync(JobDTO jobDto);
         Task DeleteJobAsync(int id);
     }
 }

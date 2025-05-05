@@ -100,5 +100,89 @@
         <member name="M:JobPortalAPI.Migrations.FixUserRole.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:JobPortalAPI.Migrations.AddAdminRequestTable">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddAdminRequestTable.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddAdminRequestTable.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddAdminRequestTable.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:JobPortalAPI.Migrations.InitialCreate">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.InitialCreate.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.InitialCreate.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.InitialCreate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:JobPortalAPI.Migrations.AddMessageToJobApplications">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddMessageToJobApplications.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddMessageToJobApplications.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddMessageToJobApplications.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:JobPortalAPI.Migrations.AddSavedJobsTable">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddSavedJobsTable.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddSavedJobsTable.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddSavedJobsTable.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:JobPortalAPI.Migrations.AddRefreshTokenColumns">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddRefreshTokenColumns.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddRefreshTokenColumns.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddRefreshTokenColumns.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:JobPortalAPI.Migrations.AddEmailVerificationFields">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddEmailVerificationFields.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddEmailVerificationFields.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddEmailVerificationFields.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:JobPortalAPI.Migrations.AddJobApplicationConstraints">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddJobApplicationConstraints.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddJobApplicationConstraints.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:JobPortalAPI.Migrations.AddJobApplicationConstraints.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
     </members>
 </doc>
